@@ -70,9 +70,16 @@
             v-if="config.allowDescription"
             v-model="state.description"
             :placeholder="$t('print.pdf.descriptionPlaceholder')"
+            :maxLength="config.charLimit"
             class="py-1"
             rows="2"
           />
+          <div
+            v-if="config.charLimit"
+            class="text-caption text-right mt-1"
+          >
+            {{ state.description.length }} / {{ config.charLimit }}
+          </div>
         </v-col>
       </v-row>
       <v-row v-if="enableLegendPrinting" no-gutters>
@@ -91,6 +98,29 @@
           label="print.pdf.printFeatureInfo"
         />
       </v-row>
+      <v-row v-if="enableLinkPrinting" no-gutters>
+        <VcsCheckbox
+          v-model="printLink"
+          :true-value="true"
+          :false-value="false"
+          label="print.pdf.printLink"
+        />
+      </v-row>
+      <v-row v-if="enableQrPrinting" no-gutters>
+        <VcsCheckbox
+          v-model="printQr"
+          :true-value="true"
+          :false-value="false"
+          label="print.pdf.printQr"
+        />
+      </v-row>
+      <v-row v-if="is2DMap" no-gutters class="mt-2">
+        <v-col>
+          <VcsLabel>
+            {{ $t('print.pdf.scale', { scale: currentScale }) }}
+          </VcsLabel>
+        </v-col>
+      </v-row>
     </v-container>
     <v-divider />
     <div class="d-flex w-full justify-end px-2 pt-2 pb-1">
@@ -103,6 +133,7 @@
 
 <script lang="ts">
   import { computed, defineComponent, inject, onUnmounted, ref } from 'vue';
+  import { useI18n } from 'vue-i18n';
   import type { VcsUiApp } from '@vcmap/ui';
   import {
     getLegendEntries,
@@ -124,6 +155,8 @@
     VOverlay,
     VRow,
   } from 'vuetify/components';
+  import { unByKey } from 'ol/Observable';
+  import type { EventsKey } from 'ol/events';
   import { getLogger } from '@vcsuite/logger';
   import type { PrintPlugin } from '../index.js';
   import type { CanvasAndPlacement } from './pdfCreator.js';
@@ -148,6 +181,15 @@
 
   export const pdfWindowId = 'create_pdf_window_id';
 
+  /**
+   * Erkennung einer 2D (OpenlayersMap) Karte über den className-Diskriminator
+   * statt instanceof, da das Plugin ggf. eine eigene @vcmap/core-Bundle-Instanz
+   * einbindet und instanceof-Checks daher über Bundle-Grenzen hinweg fehlschlagen können.
+   */
+  function isOpenlayersMap(map: unknown): map is { olMap: any } {
+    return (map as any)?.className === 'OpenlayersMap';
+  }
+
   export default defineComponent({
     name: 'PdfWindow',
     components: {
@@ -170,6 +212,8 @@
       const plugin = app.plugins.getByKey(name) as PrintPlugin;
       const { config, state } = plugin;
 
+      const { t } = useI18n();
+
       const { entries: legendEntries, destroy } = getLegendEntries(app);
       const enableLegendPrinting = computed(
         () => config.printLegend && !!legendEntries.length,
@@ -185,8 +229,60 @@
         });
       const printFeatureInfo = ref(true);
 
+      const enableLinkPrinting = computed(() => !!config.printLinkToMap);
+      const printLink = ref(true);
+
+      const enableQrPrinting = computed(() => !!config.printQR);
+      const printQr = ref(true);
+
       // State whether calculation is running.
       const running = ref(false);
+
+      // --- Maßstab Logik ---
+      const currentScale = ref<string>('');
+      const is2DMap = ref(false);
+      let resolutionListenerKey: EventsKey | null = null;
+
+      const updateScale = (): void => {
+        const activeMap = app.maps.activeMap as any;
+        const resolution = activeMap?.olMap?.getView().getResolution();
+        if (resolution) {
+          const scale = Math.round(resolution * 39.37 * 96);
+          currentScale.value = `1:${scale.toLocaleString('de-DE')}`;
+        }
+      };
+
+      function detachResolutionListener(): void {
+        if (resolutionListenerKey) {
+          unByKey(resolutionListenerKey);
+          resolutionListenerKey = null;
+        }
+      }
+
+      function handleMapActivated(newMap: unknown): void {
+        detachResolutionListener();
+        is2DMap.value = isOpenlayersMap(newMap);
+        if (is2DMap.value) {
+          const map = newMap as { olMap: any };
+          updateScale();
+          resolutionListenerKey = map.olMap
+            .getView()
+            .on('change:resolution', updateScale);
+        } else {
+          currentScale.value = '';
+        }
+      }
+
+      // einmalig für den initialen Zustand beim Öffnen des Windows,
+      // da mapActivated nur zukünftige Wechsel meldet
+      handleMapActivated(app.maps.activeMap);
+
+      // meldet sich auch, während das Window bereits offen ist und die
+      // Karte gewechselt wird (2D <-> 3D <-> Oblique <-> Panorama)
+      const mapActivatedListener = app.maps.mapActivated.addEventListener(
+        handleMapActivated,
+      );
+      // --- ENDE Maßstab Logik ---
 
       /** Creates pdf by utilizing the PDFCreator. Handling is done by default function in shootScreenAndHandle.js */
       async function createPdf(): Promise<void> {
@@ -194,6 +290,13 @@
         const activeMap = app.maps.activeMap!;
         const mapElement = getMapElement(activeMap);
         const mapSize = getMapSize(activeMap);
+
+        // Verwendet den bereits reaktiv gepflegten Maßstab inkl. übersetztem Präfix,
+        // nur wenn eine 2D-Karte aktiv ist.
+        const scale =
+          is2DMap.value && currentScale.value
+            ? t('print.pdf.scale', { scale: currentScale.value })
+            : undefined;
 
         let logo;
         if (config.printLogo) {
@@ -228,10 +331,25 @@
           );
         }
 
-        /** information about the map that is printed next to the contact information. Generated by mapHelper.js function. */
+        /**
+         * Link zur Karte wird nur einmal geholt, wenn mindestens einer von
+         * Link-Text oder QR-Code sowohl in der Config aktiviert als auch
+         * per Checkbox vom Nutzer ausgewählt ist.
+         */
+        let link;
+        if (
+          (config.printLinkToMap && printLink.value) ||
+          (config.printQR && printQr.value)
+        ) {
+          link = await getMapLink(app);
+        }
         let mapLink;
-        if (config.printLinkToMap) {
-          mapLink = await getMapLink(app);
+        if (config.printLinkToMap && printLink.value) {
+          mapLink = link;
+        }
+        let qrLink;
+        if (config.printQR && printQr.value) {
+          qrLink = link;
         }
 
         /**
@@ -296,19 +414,19 @@
             overlayWindows.push(featureInfo);
           }
         }
-
+        console.log(config);
         // could also be put into styles.js
         const fonts: { name: string; regular: string; bold: string } = {
-          name: 'RobotoSlab',
+          name: config.font?.name,
           regular: getPluginAssetUrl(
             app,
             name,
-            'plugin-assets/fonts/RobotoSlab-Regular.ttf',
+            config.font?.regular,
           )!,
           bold: getPluginAssetUrl(
             app,
             name,
-            'plugin-assets/fonts/RobotoSlab-Bold.ttf',
+            config.font?.bold,
           )!,
         };
 
@@ -326,9 +444,11 @@
             contact,
             mapInfo,
             mapLink,
+            qrLink,
             copyright,
             legend,
             fonts,
+            scale,
           })
           .then(async () => {
             // after setup possible to execute pdfCreator.create()
@@ -357,6 +477,8 @@
       onUnmounted(() => {
         destroy();
         featureInfoListener();
+        detachResolutionListener();
+        mapActivatedListener();
       });
 
       return {
@@ -366,8 +488,14 @@
         enableFeatureInfoPrinting,
         printFeatureInfo,
         printLegend,
+        enableLinkPrinting,
+        printLink,
+        enableQrPrinting,
+        printQr,
         running,
         createPdf,
+        is2DMap,
+        currentScale,
       };
     },
   });

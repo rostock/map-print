@@ -62,6 +62,23 @@ export const contactKeysPattern: Record<string, Pattern> = {
   fax: maybe(String),
 };
 
+/** Font configuration printed on pdf. */
+export type FontConfig = {
+  /** Name of the font */
+  name?: string;
+  /** Path to the regular font file */
+  regular?: string;
+  /** Path to the bold font file */
+  bold?: string;
+};
+
+/** Possible font keys with corresponding type */
+export const fontKeysPattern: Record<string, Pattern> = {
+  name: maybe(String),
+  regular: maybe(String),
+  bold: maybe(String),
+};
+
 /** Configuration options of the print plugin. */
 export type PrintConfig = {
   /** List of page formates the user can select from. */
@@ -90,6 +107,8 @@ export type PrintConfig = {
   printObliqueName?: boolean;
   /** Whether link to map should be printed on pdf. Will be part of MapInfo */
   printLinkToMap?: boolean;
+  /** Whether link to map should be printed on pdf. Will be part of MapInfo */
+  printQR?: boolean;
   /** Whether coordinates should be printed on pdf. Will be part of MapInfo */
   printCoordinates?: boolean;
   /** The projection to be used for the coordinates. */
@@ -110,6 +129,10 @@ export type PrintConfig = {
   legendOrientation?: LegendOrientationOptions;
   /** The page format for the legend entries. */
   legendFormat?: LegendFormatOptions;
+  /** The default char limitation of the description. */
+  charLimit?: number;
+  /** Font configuration used for the PDF. */
+  font?: FontConfig;
 };
 
 export type PrintState = {
@@ -263,10 +286,24 @@ export function getConfigAndState(
     defaultOptions.printLinkToMap,
   );
 
+  /**
+   * Whether a QR code linking to the map should be printed on pdf or not.
+   */
+  const printQR: boolean = parseBoolean(
+    config.printQR,
+    defaultOptions.printQR,
+  );
+
   const printCoordinates: boolean = parseBoolean(
     config.printCoordinates,
     defaultOptions.printCoordinates,
   );
+
+  /**
+   * max. char in the description.
+   */
+  const charLimit: number =
+    config.charLimit || defaultOptions.charLimit;
 
   const coordinatesProj: ProjectionOptions =
     config.coordinatesProj || defaultOptions.coordinatesProj;
@@ -292,6 +329,9 @@ export function getConfigAndState(
   const contactDetails: ContactInfo =
     config.contactDetails || defaultOptions.contactDetails;
 
+  const font: FontConfig =
+    config.font || defaultOptions.font;
+
   return {
     // setup configuration of the plugin
     config: {
@@ -312,9 +352,12 @@ export function getConfigAndState(
       printMapInfo,
       printObliqueName,
       printLinkToMap,
+      printQR,
       printCoordinates,
       coordinatesProj,
       contactDetails,
+      charLimit,
+      font,
       // screenshot
       resolutionList,
       resolutionDefault,
@@ -363,6 +406,7 @@ export function validate(options: PrintConfig): void {
     check(options.printMapInfo, maybe(Boolean));
     check(options.printObliqueName, maybe(Boolean));
     check(options.printLinkToMap, maybe(Boolean));
+    check(options.printQR, maybe(Boolean));
     check(options.printCoordinates, maybe(Boolean));
     check(options.coordinatesProj, maybe({ type: String, epsg: String }));
     check(options.resolutionList, maybe([Number]));
@@ -370,6 +414,7 @@ export function validate(options: PrintConfig): void {
       options.resolutionList || defaultOptions.resolutionList;
     check(options.resolutionDefault, maybe(oneOf(...resolutionList)));
     check(options.contactDetails, maybe(strict(contactKeysPattern)));
+    check(options.font, maybe(strict(fontKeysPattern)));
   } catch (err) {
     getLogger(name).error('Invalid config', err);
   }

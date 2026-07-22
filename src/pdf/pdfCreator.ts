@@ -1,5 +1,6 @@
 import type { LegendItem } from '@vcmap/ui';
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
 import { JSPDF_PPI } from '../common/util.js';
 import pageSizes from './standardPageSizes.js';
 import type { PageStyle } from './styles.js';
@@ -57,6 +58,8 @@ type Legend = {
 };
 
 type PDFCreatorOptions = {
+  /** The scale of the given map */
+  scale?: string;
   /** The orientation of the PDF. */
   orientation: OrientationOptions.LANDSCAPE | OrientationOptions.PORTRAIT;
   /** The format of the PDF. */
@@ -75,6 +78,8 @@ type PDFCreatorOptions = {
   mapInfo?: TextWithHeader;
   /** Link to the map. */
   mapLink?: string;
+  /** Link to the map. */
+  qrLink?: string;
   /** Information about the copyright. */
   copyright?: string;
   /** Information about the legend. */
@@ -138,6 +143,12 @@ export default class PDFCreator {
   /** Position and dimensions of the logo. */
   logoPlacement?: ElementPlacement;
 
+  /** Data URL of the QR code linking to the map, printed in the upper left corner. */
+  qrCode?: string;
+
+  /** Position and dimensions of the QR code. */
+  qrCodePlacement?: ElementPlacement;
+
   /** Contact information already splitted by configManager. */
   contact?: TextWithHeader;
 
@@ -176,6 +187,9 @@ export default class PDFCreator {
   /** Legend config and items. */
   legend?: Legend;
 
+  /** Scale of the map */
+  scale?: string;
+
   /** The current layer for which a legend page is being added */
   currentLayerTitle?: string;
 
@@ -184,6 +198,7 @@ export default class PDFCreator {
    * @param pdfCreatorOptions The params for PDFCreator setup wrapped in an object.
    */
   async setup(pdfCreatorOptions: PDFCreatorOptions): Promise<void> {
+    console.log(pdfCreatorOptions);
     if (pdfCreatorOptions.format !== defaultOptions.formatDefault) {
       this.formatting = Object.assign(
         pageStyles.default,
@@ -222,10 +237,24 @@ export default class PDFCreator {
       this.orientation = pdfCreatorOptions.orientation;
     }
 
+    if (pdfCreatorOptions.qrLink) {
+      this.mapLink = pdfCreatorOptions.mapLink;
+      this.qrCode = await QRCode.toDataURL(pdfCreatorOptions.qrLink, {
+        margin: 0,
+      });
+      this.qrCodePlacement = this._calcQrCodePlacement();
+    }
+
     if (pdfCreatorOptions.title) {
-      const width = this._calcElementWidth(
+      let width = this._calcElementWidth(
         this.formatting[`title.widthPortion.${pdfCreatorOptions.orientation}`],
       );
+      let x = this.formatting.pageMargins[3];
+      if (this.qrCodePlacement) {
+        x += this.qrCodePlacement.size.width + this.formatting.elementMargin;
+        width -=
+          this.qrCodePlacement.size.width + this.formatting.elementMargin;
+      }
       const maxLineCount =
         this.formatting[`title.maxLineCount.${this.orientation}`];
 
@@ -239,6 +268,7 @@ export default class PDFCreator {
         this.title,
         width,
         maxLineCount,
+        x,
       );
     }
 
@@ -254,6 +284,10 @@ export default class PDFCreator {
       this.contactPlacement = this._calcContactPlacement();
     }
 
+    if (pdfCreatorOptions.scale) {
+      pdfCreatorOptions.mapInfo?.text.push(pdfCreatorOptions.scale);
+    }
+    
     if (pdfCreatorOptions.mapInfo) {
       this._setTextStyle('info');
       this.mapInfo = pdfCreatorOptions.mapInfo;
@@ -262,7 +296,7 @@ export default class PDFCreator {
       }
       this.mapInfoPlacement = this._calcMapInfoPlacement();
     }
-
+ 
     if (pdfCreatorOptions.description) {
       /** width of discription text field */
       let width = this.maxLineWidth;
@@ -357,15 +391,18 @@ export default class PDFCreator {
    * @param title The title.
    * @param width The width of the title text element.
    * @param maxLineCount max number of title lines.
+   * @param x Optional x coordinate of the upper left corner. Defaults to the left page margin;
+   * shifted to the right when a QR code is placed before the title.
    */
   private _calcTitlePlacement(
     title: string[],
     width: number,
     maxLineCount: number,
+    x: number = this.formatting.pageMargins[3],
   ): ElementPlacement {
     return {
       coords: {
-        x: this.formatting.pageMargins[3],
+        x,
         // margin + half of the space that is added to font size by lineheight
         y:
           this.formatting.pageMargins[0] +
@@ -408,6 +445,31 @@ export default class PDFCreator {
       size: {
         width: printHeight * aspectRatio,
         height: printHeight,
+      },
+    };
+  }
+
+  /**
+   * Calcutlates placement of the QR code linking to the map. Printed in the upper left
+   * corner, directly before the title, vertically centered to the title's line height —
+   * mirrors {@link _calcLogoPlacement}, just on the opposite side of the page.
+   */
+  private _calcQrCodePlacement(): ElementPlacement {
+    const printSize = this._calcTotalLineHeight(this.formatting['logo.scale']);
+    return {
+      coords: {
+        x: this.formatting.pageMargins[3],
+        y:
+          this.formatting.pageMargins[0] +
+          this._calcTotalLineHeight(
+            this.formatting[`title.maxLineCount.${this.orientation}`],
+          ) /
+            2 -
+          printSize / 2,
+      },
+      size: {
+        width: printSize,
+        height: printSize,
       },
     };
   }
@@ -524,6 +586,11 @@ export default class PDFCreator {
       upperBorder =
         this.logoPlacement!.coords.y +
         this.logoPlacement!.size.height +
+        this.formatting.elementMargin;
+    } else if (this.qrCodePlacement) {
+      upperBorder =
+        this.qrCodePlacement.coords.y +
+        this.qrCodePlacement.size.height +
         this.formatting.elementMargin;
     } else {
       upperBorder = this.formatting.pageMargins[0];
@@ -653,6 +720,16 @@ export default class PDFCreator {
       );
     }
 
+    if (this.qrCode && this.qrCodePlacement) {
+      this.pdfDoc.addImage(
+        this.qrCode,
+        this.qrCodePlacement.coords.x,
+        this.qrCodePlacement.coords.y,
+        this.qrCodePlacement.size.width,
+        this.qrCodePlacement.size.height,
+      );
+    }
+
     if (this.copyright) {
       this._setTextStyle('info');
       this.pdfDoc.setFillColor(0, 0, 0, 0.1);
@@ -702,7 +779,9 @@ export default class PDFCreator {
         { baseline: 'hanging' },
       );
     }
-
+    if (this.scale) {
+      console.log("sasdsafdsdfsdf");
+    }
     if (this.mapInfo) {
       this._setTextStyle('info');
       // -1 line height in y because of map info header

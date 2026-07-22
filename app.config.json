@@ -1,0 +1,6 @@
+{
+  "name": "WAB",
+  "modules": [
+    "./conf/public.config.json"
+  ]
+}
