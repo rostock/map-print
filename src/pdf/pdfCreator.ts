@@ -278,25 +278,68 @@ export default class PDFCreator {
       this.logoPlacement = this._calcLogoPlacement(this.logo);
     }
 
-    if (pdfCreatorOptions.contact) {
-      this._setTextStyle('info');
-      this.contact = pdfCreatorOptions.contact;
-      this.contactPlacement = this._calcContactPlacement();
-    }
-
     if (pdfCreatorOptions.scale) {
       pdfCreatorOptions.mapInfo?.text.push(pdfCreatorOptions.scale);
     }
-    
+
+    // Breite der Info-Spalten hängt nur von orientation/formatting ab, nicht
+    // vom Inhalt — kann also vor der Höhenberechnung feststehen.
+    this._setTextStyle('info');
+    const infoWidth = this._calcElementWidth(
+      this.formatting[`info.widthPortion.${this.orientation}`],
+    );
+
+    // Jede Zeile einzeln umbrechen (nicht den ganzen Block auf einmal),
+    // damit z.B. Straße/PLZ/Ort weiterhin als eigene Zeilen erkennbar
+    // bleiben und nur bei tatsächlicher Überlänge zusätzlich umbrechen.
+    let wrappedContact: TextWithHeader | undefined;
+    if (pdfCreatorOptions.contact) {
+      wrappedContact = {
+        header: pdfCreatorOptions.contact.header,
+        text: pdfCreatorOptions.contact.text.flatMap(
+          (line) => this.pdfDoc.splitTextToSize(line, infoWidth) as string[],
+        ),
+      };
+    }
+
+    let wrappedMapInfo: TextWithHeader | undefined;
     if (pdfCreatorOptions.mapInfo) {
+      wrappedMapInfo = {
+        header: pdfCreatorOptions.mapInfo.header,
+        text: pdfCreatorOptions.mapInfo.text.flatMap(
+          (line) => this.pdfDoc.splitTextToSize(line, infoWidth) as string[],
+        ),
+      };
+    }
+
+    // contact und mapInfo werden auf eine gemeinsame Zeilenzahl ausgerichtet,
+    // damit beide Boxen (und weiter unten die description) auf derselben
+    // Höhe beginnen, unabhängig davon, welche der beiden mehr Inhalt hat.
+    // Basiert auf der tatsächlichen, umgebrochenen Zeilenzahl statt der
+    // ursprünglichen Eingabezeilen.
+    const contactLineCount = wrappedContact
+      ? wrappedContact.text.length + 1
+      : 0;
+    const mapInfoLineCount = wrappedMapInfo
+      ? wrappedMapInfo.text.length + 1 + (pdfCreatorOptions.mapLink ? 1 : 0)
+      : 0;
+    const sharedInfoLineCount = Math.max(contactLineCount, mapInfoLineCount);
+
+    if (wrappedContact) {
       this._setTextStyle('info');
-      this.mapInfo = pdfCreatorOptions.mapInfo;
+      this.contact = wrappedContact;
+      this.contactPlacement = this._calcContactPlacement(sharedInfoLineCount);
+    }
+
+    if (wrappedMapInfo) {
+      this._setTextStyle('info');
+      this.mapInfo = wrappedMapInfo;
       if (pdfCreatorOptions.mapLink) {
         this.mapLink = pdfCreatorOptions.mapLink;
       }
-      this.mapInfoPlacement = this._calcMapInfoPlacement();
+      this.mapInfoPlacement = this._calcMapInfoPlacement(sharedInfoLineCount);
     }
- 
+
     if (pdfCreatorOptions.description) {
       /** width of discription text field */
       let width = this.maxLineWidth;
@@ -474,34 +517,37 @@ export default class PDFCreator {
     };
   }
 
-  /** Calcutlates placement of the contact information. Position depends on page margins and height on number of possible contact keys. */
-  private _calcContactPlacement(): ElementPlacement {
+  /**
+   * Calcutlates placement of the contact information. Position depends on page margins.
+   * Height/y is based on a shared line count so contact, mapInfo and description all
+   * start at the same height, regardless of which one has more actual content.
+   * @param lineCount The shared line count to align contact, mapInfo and description to.
+   */
+  private _calcContactPlacement(lineCount: number): ElementPlacement {
     return {
       coords: {
         x: this.formatting.pageMargins[3],
-        // +1 for title of contact.
         y:
           this.pdfSize.height -
           this.formatting.pageMargins[2] -
-          this._calcTotalLineHeight(Object.keys(contactKeysPattern).length + 1),
+          this._calcTotalLineHeight(lineCount),
       },
       size: {
-        // +1 for title of contact.
         width: this._calcElementWidth(
           this.formatting[`info.widthPortion.${this.orientation}`],
         ),
-        height: this._calcTotalLineHeight(
-          Object.keys(contactKeysPattern).length + 1,
-        ),
+        height: this._calcTotalLineHeight(lineCount),
       },
     };
   }
 
   /**
-   * Calcutlates placement of the map information. Position depends on page margins and contact info availability.
-   * Height on number of possible contact keys.
+   * Calcutlates placement of the map information. Position depends on page margins and
+   * contact info availability. Height/y is based on a shared line count so contact,
+   * mapInfo and description all start at the same height.
+   * @param lineCount The shared line count to align contact, mapInfo and description to.
    */
-  private _calcMapInfoPlacement(): ElementPlacement {
+  private _calcMapInfoPlacement(lineCount: number): ElementPlacement {
     const xMargin =
       this.orientation === OrientationOptions.PORTRAIT
         ? this.formatting.elementMargin
@@ -513,20 +559,16 @@ export default class PDFCreator {
             this.contactPlacement!.size.width +
             xMargin
           : this.formatting.pageMargins[3],
-        // +1 for title of contact.
         y:
           this.pdfSize.height -
           this.formatting.pageMargins[2] -
-          this._calcTotalLineHeight(Object.keys(contactKeysPattern).length + 1),
+          this._calcTotalLineHeight(lineCount),
       },
       size: {
-        // +1 for title of map info.
         width: this._calcElementWidth(
           this.formatting[`info.widthPortion.${this.orientation}`],
         ),
-        height: this._calcTotalLineHeight(
-          Object.keys(contactKeysPattern).length + 1,
-        ),
+        height: this._calcTotalLineHeight(lineCount),
       },
     };
   }
@@ -546,20 +588,29 @@ export default class PDFCreator {
     let height;
     let x;
     if (this.orientation === OrientationOptions.PORTRAIT) {
-      lowerBorder =
-        this.contactPlacement?.coords.y ??
-        this.mapInfoPlacement?.coords.y ??
-        this.pdfSize.height - this.formatting.pageMargins[2];
+      // An beiden nebeneinanderliegenden Info-Boxen ausrichten, nicht nur an
+      // der zuerst vorhandenen — die höhere der beiden Boxen bestimmt, wo
+      // die description enden muss, um eine Überlappung zu vermeiden.
+      const infoBoxYs = [
+        this.contactPlacement?.coords.y,
+        this.mapInfoPlacement?.coords.y,
+      ].filter((y): y is number => y !== undefined);
+      lowerBorder = infoBoxYs.length
+        ? Math.min(...infoBoxYs)
+        : this.pdfSize.height - this.formatting.pageMargins[2];
       height =
         this._calcTotalLineHeight(description.length) +
         this.formatting.elementMargin;
       x = this.formatting.pageMargins[3];
     } else {
       lowerBorder = this.pdfSize.height - this.formatting.pageMargins[2];
-      height =
-        this.contactPlacement?.size.height ??
-        this.mapInfoPlacement?.size.height ??
-        this._calcTotalLineHeight(description.length);
+      const infoBoxHeights = [
+        this.contactPlacement?.size.height,
+        this.mapInfoPlacement?.size.height,
+      ].filter((h): h is number => h !== undefined);
+      height = infoBoxHeights.length
+        ? Math.max(...infoBoxHeights)
+        : this._calcTotalLineHeight(description.length);
       x = this.pdfSize.width - this.formatting.pageMargins[1] - width;
     }
     return {
@@ -599,14 +650,16 @@ export default class PDFCreator {
     if (this.description) {
       lowerBorder =
         this.descriptionPlacement!.coords.y - this.formatting.elementMargin;
-    } else if (this.contact) {
-      lowerBorder =
-        this.contactPlacement!.coords.y - this.formatting.elementMargin;
-    } else if (this.mapInfo) {
-      lowerBorder =
-        this.mapInfoPlacement!.coords.y - this.formatting.elementMargin;
     } else {
-      lowerBorder = this.formatting.pageMargins[2];
+      // ohne description: an der höheren der beiden Info-Boxen ausrichten,
+      // statt nur an der zuerst vorhandenen.
+      const infoBoxYs = [
+        this.contactPlacement?.coords.y,
+        this.mapInfoPlacement?.coords.y,
+      ].filter((y): y is number => y !== undefined);
+      lowerBorder = infoBoxYs.length
+        ? Math.min(...infoBoxYs) - this.formatting.elementMargin
+        : this.formatting.pageMargins[2];
     }
     // calc potential values by checking available space.
     let height = lowerBorder - upperBorder;
