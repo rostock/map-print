@@ -19,12 +19,11 @@
   "printLinkToMap": true,
   "printQR": true,
   "printObliqueName": false,
-  "printFeatureInfo": true,
+  "printFeatureInfo": false,
   "charLimit": 500,
   "font": {
     "name": "fira-sans",
     "regular": "plugin-assets/fonts/fira-sans.regular.ttf",
     "bold": "plugin-assets/fonts/fira-sans.bold.ttf"
   }
-  
 }

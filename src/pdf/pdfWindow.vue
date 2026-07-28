@@ -147,6 +147,7 @@
     VcsTextArea,
     VcsTextField,
   } from '@vcmap/ui';
+  import { OpenlayersMap } from '@vcmap/core';
   import {
     VCol,
     VDivider,
@@ -180,15 +181,6 @@
   import { name } from '../../package.json';
 
   export const pdfWindowId = 'create_pdf_window_id';
-
-  /**
-   * Erkennung einer 2D (OpenlayersMap) Karte über den className-Diskriminator
-   * statt instanceof, da das Plugin ggf. eine eigene @vcmap/core-Bundle-Instanz
-   * einbindet und instanceof-Checks daher über Bundle-Grenzen hinweg fehlschlagen können.
-   */
-  function isOpenlayersMap(map: unknown): map is { olMap: any } {
-    return (map as any)?.className === 'OpenlayersMap';
-  }
 
   export default defineComponent({
     name: 'PdfWindow',
@@ -244,8 +236,11 @@
       let resolutionListenerKey: EventsKey | null = null;
 
       const updateScale = (): void => {
-        const activeMap = app.maps.activeMap as any;
-        const resolution = activeMap?.olMap?.getView().getResolution();
+        const activeMap = app.maps.activeMap;
+        if (!(activeMap instanceof OpenlayersMap)) {
+          return;
+        }
+        const resolution = activeMap.olMap.getView().getResolution();
         if (resolution) {
           const scale = Math.round(resolution * 39.37 * 96);
           currentScale.value = `1:${scale.toLocaleString('de-DE')}`;
@@ -261,9 +256,9 @@
 
       function handleMapActivated(newMap: unknown): void {
         detachResolutionListener();
-        is2DMap.value = isOpenlayersMap(newMap);
+        is2DMap.value = newMap instanceof OpenlayersMap;
         if (is2DMap.value) {
-          const map = newMap as { olMap: any };
+          const map = newMap as OpenlayersMap;
           updateScale();
           resolutionListenerKey = map.olMap
             .getView()
