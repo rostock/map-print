@@ -201,8 +201,8 @@
    * (z.B. Meter bei projizierten Koordinatensystemen). Später ggf. aus
    * Format/Orientierung/PPI ableitbar.
    */
-  const printAreaWidth = 500;
-  const printAreaHeight = 350;
+  const printAreaWidth = 300;
+  const printAreaHeight = 550;
 
   /**
    * Cursor über dem Rotationsgriff: kreisförmig angeordneter Pfeil (Rotate-Icon)
@@ -372,7 +372,7 @@
           getHandleCoordinate(printAreaState),
         );
       }
-
+      console.log(theme);
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
         if (feature.get(printAreaRoleKey) === printAreaHandleRole) {

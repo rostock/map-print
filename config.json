@@ -10,12 +10,48 @@
     "phone": "",
     "fax": ""
   },
-  "formatList": [
-    "A5",
-    "A4",
-    "A3",
-    "A2"
-  ],
+  "formatList": {
+    "A5": {
+      "portrait": {
+        "width": 5,
+        "height": 10
+      },
+      "landscape": {
+        "width": 5,
+        "height": 10
+      }
+    },
+    "A4": {
+      "portrait": {
+        "width": 5,
+        "height": 10
+      },
+      "landscape": {
+        "width": 5,
+        "height": 10
+      }
+    },
+    "A3": {
+      "portrait": {
+        "width": 5,
+        "height": 10
+      },
+      "landscape": {
+        "width": 5,
+        "height": 10
+      }
+    },
+    "A2": {
+      "portrait": {
+        "width": 5,
+        "height": 10
+      },
+      "landscape": {
+        "width": 5,
+        "height": 10
+      }
+    }
+  },
   "printLinkToMap": true,
   "printQR": true,
   "printObliqueName": false,
