@@ -134,6 +134,7 @@
 <script lang="ts">
   import { computed, defineComponent, inject, onUnmounted, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
+  import { useTheme } from 'vuetify';
   import type { VcsUiApp } from '@vcmap/ui';
   import {
     getLegendEntries,
@@ -147,7 +148,7 @@
     VcsTextArea,
     VcsTextField,
   } from '@vcmap/ui';
-  import { OpenlayersMap } from '@vcmap/core';
+  import { OpenlayersMap, VectorLayer } from '@vcmap/core';
   import {
     VCol,
     VDivider,
@@ -158,9 +159,19 @@
   } from 'vuetify/components';
   import { unByKey } from 'ol/Observable';
   import type { EventsKey } from 'ol/events';
+  import Feature from 'ol/Feature';
+  import type { FeatureLike } from 'ol/Feature';
+  import Polygon from 'ol/geom/Polygon';
+  import Point from 'ol/geom/Point';
+  import PointerInteraction from 'ol/interaction/Pointer';
+  import { Style, Stroke, Circle as CircleStyle, Fill } from 'ol/style';
+  import type { Coordinate } from 'ol/coordinate';
+  import type { Pixel } from 'ol/pixel';
+  import type OLMap from 'ol/Map';
+  import type MapBrowserEvent from 'ol/MapBrowserEvent';
   import { getLogger } from '@vcsuite/logger';
   import type { PrintPlugin } from '../index.js';
-  import type { CanvasAndPlacement } from './pdfCreator.js';
+  import type { CanvasAndPlacement, Size } from './pdfCreator.js';
   import PDFCreator from './pdfCreator.js';
   import createAndHandleBlob from '../screenshot/shootScreenAndHandle.js';
   import {
@@ -181,6 +192,32 @@
   import { name } from '../../package.json';
 
   export const pdfWindowId = 'create_pdf_window_id';
+
+  /** Layer name under which the print-area rectangle is registered. */
+  const printAreaLayerName = 'print-area-rectangle-layer';
+
+  /**
+   * Fixed (fiktive) Breite/Höhe des Druckbereich-Rechtecks in Karteneinheiten
+   * (z.B. Meter bei projizierten Koordinatensystemen). Später ggf. aus
+   * Format/Orientierung/PPI ableitbar.
+   */
+  const printAreaWidth = 500;
+  const printAreaHeight = 350;
+
+  /**
+   * Cursor über dem Rotationsgriff: kreisförmig angeordneter Pfeil (Rotate-Icon)
+   * als Daten-URI-SVG, mit "grab" als Fallback für Browser ohne Custom-Cursor-Support.
+   */
+  const rotateCursorSvg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+    '<path fill="#000000" stroke="#FFFFFF" stroke-width="1" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>' +
+    '</svg>';
+  const rotateCursorStyle = `url("data:image/svg+xml,${encodeURIComponent(
+    rotateCursorSvg,
+  )}") 12 12, grab`;
+
+  /** Cursor über dem Rechteck-Körper: vierseitiges Pfeilkreuz zum Verschieben. */
+  const printAreaMoveCursorStyle = 'move';
 
   export default defineComponent({
     name: 'PdfWindow',
@@ -205,6 +242,7 @@
       const { config, state } = plugin;
 
       const { t } = useI18n();
+      const theme = useTheme();
 
       const { entries: legendEntries, destroy } = getLegendEntries(app);
       const enableLegendPrinting = computed(
@@ -235,6 +273,12 @@
       const is2DMap = ref(false);
       let resolutionListenerKey: EventsKey | null = null;
 
+      /** Formatiert eine View-Resolution (m/px) als "1:x"-Maßstabsangabe. */
+      function formatScaleLabel(resolution: number): string {
+        const scale = Math.round(resolution * 39.37 * 96);
+        return `1:${scale.toLocaleString('de-DE')}`;
+      }
+
       const updateScale = (): void => {
         const activeMap = app.maps.activeMap;
         if (!(activeMap instanceof OpenlayersMap)) {
@@ -242,8 +286,7 @@
         }
         const resolution = activeMap.olMap.getView().getResolution();
         if (resolution) {
-          const scale = Math.round(resolution * 39.37 * 96);
-          currentScale.value = `1:${scale.toLocaleString('de-DE')}`;
+          currentScale.value = formatScaleLabel(resolution);
         }
       };
 
@@ -252,6 +295,310 @@
           unByKey(resolutionListenerKey);
           resolutionListenerKey = null;
         }
+      }
+
+      // --- Druckbereich-Rechteck Logik ---
+      /** Property-Key, über den Rechteck- und Rotationsgriff-Feature unterschieden werden. */
+      const printAreaRoleKey = 'printAreaRole';
+      const printAreaRectangleRole = 'rectangle';
+      const printAreaHandleRole = 'rotateHandle';
+
+      /** Radius (Pixel), innerhalb dessen ein Klick auf den Rotationsgriff erkannt wird. */
+      const rotateHandleHitRadius = 10;
+
+      interface PrintAreaState {
+        center: Coordinate;
+        width: number;
+        height: number;
+        /** Rotation um das eigene Zentrum, in Radiant. */
+        rotation: number;
+      }
+
+      /**
+       * VectorLayer, der ausschließlich zur Anzeige von Rechteck und
+       * Rotationsgriff dient, solange das Print-Fenster geöffnet ist. Wird
+       * beim Öffnen angelegt und beim Schließen (onUnmounted) vollständig
+       * wieder entfernt.
+       */
+      let printAreaLayer: VectorLayer | null = null;
+      /** Karte, auf der die Interaction registriert wurde (für sauberes Entfernen). */
+      let printAreaMap: OpenlayersMap | null = null;
+      let printAreaInteraction: PointerInteraction | null = null;
+      let printAreaPointerMoveKey: EventsKey | null = null;
+      let printAreaState: PrintAreaState | null = null;
+      let rectangleFeature: Feature | null = null;
+      let handleFeature: Feature | null = null;
+
+      /** Liefert die geschlossenen Eckpunkte des um state.rotation rotierten Rechtecks. */
+      function getRectangleCoordinates(s: PrintAreaState): Coordinate[] {
+        const halfWidth = s.width / 2;
+        const halfHeight = s.height / 2;
+        const corners: Coordinate[] = [
+          [-halfWidth, -halfHeight],
+          [halfWidth, -halfHeight],
+          [halfWidth, halfHeight],
+          [-halfWidth, halfHeight],
+        ];
+        const cos = Math.cos(s.rotation);
+        const sin = Math.sin(s.rotation);
+        const rotated = corners.map<Coordinate>(([x, y]) => [
+          s.center[0] + x * cos - y * sin,
+          s.center[1] + x * sin + y * cos,
+        ]);
+        return [...rotated, rotated[0]];
+      }
+
+      /** Liefert die Position des Rotationsgriffs (obere rechte Ecke, rotiert). */
+      function getHandleCoordinate(s: PrintAreaState): Coordinate {
+        const halfWidth = s.width / 2;
+        const halfHeight = s.height / 2;
+        const cos = Math.cos(s.rotation);
+        const sin = Math.sin(s.rotation);
+        return [
+          s.center[0] + halfWidth * cos - halfHeight * sin,
+          s.center[1] + halfWidth * sin + halfHeight * cos,
+        ];
+      }
+
+      /** Aktualisiert beide Feature-Geometrien anhand von printAreaState. */
+      function updatePrintAreaGeometries(): void {
+        if (!printAreaState || !rectangleFeature || !handleFeature) {
+          return;
+        }
+        (rectangleFeature.getGeometry() as Polygon).setCoordinates([
+          getRectangleCoordinates(printAreaState),
+        ]);
+        (handleFeature.getGeometry() as Point).setCoordinates(
+          getHandleCoordinate(printAreaState),
+        );
+      }
+
+      /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
+      function printAreaStyleFunction(feature: FeatureLike): Style {
+        if (feature.get(printAreaRoleKey) === printAreaHandleRole) {
+          return new Style({
+            image: new CircleStyle({
+              radius: 7,
+              fill: new Fill({ color: theme.current.value.colors.secondary }),
+              stroke: new Stroke({ color: '#FFFFFF', width: 2 }),
+            }),
+          });
+        }
+        return new Style({
+          stroke: new Stroke({
+            color: theme.current.value.colors.primary,
+            width: 2,
+          }),
+        });
+      }
+
+      /**
+       * Erstellt Rechteck- und Rotationsgriff-Feature mit fester Breite/Höhe
+       * (printAreaWidth / printAreaHeight, in Karteneinheiten), zentriert auf
+       * den aktuellen Mittelpunkt der 2D-Kartenansicht.
+       */
+      function createPrintAreaFeatures(map: OpenlayersMap): boolean {
+        const center = map.olMap.getView().getCenter();
+        if (!center) {
+          return false;
+        }
+
+        printAreaState = {
+          center: [center[0], center[1]],
+          width: printAreaWidth,
+          height: printAreaHeight,
+          rotation: 0,
+        };
+
+        rectangleFeature = new Feature({
+          geometry: new Polygon([getRectangleCoordinates(printAreaState)]),
+        });
+        rectangleFeature.set(printAreaRoleKey, printAreaRectangleRole);
+
+        handleFeature = new Feature({
+          geometry: new Point(getHandleCoordinate(printAreaState)),
+        });
+        handleFeature.set(printAreaRoleKey, printAreaHandleRole);
+
+        return true;
+      }
+
+      /** Prüft per Pixel-Distanz, ob sich der übergebene Pixel über dem Rotationsgriff befindet. */
+      function isPixelOverHandle(map: OLMap, pixel: Pixel): boolean {
+        if (!handleFeature) {
+          return false;
+        }
+        const handleCoordinate = (
+          handleFeature.getGeometry() as Point
+        ).getCoordinates();
+        const handlePixel = map.getPixelFromCoordinate(handleCoordinate);
+        if (!handlePixel) {
+          return false;
+        }
+        const dx = pixel[0] - handlePixel[0];
+        const dy = pixel[1] - handlePixel[1];
+        return Math.hypot(dx, dy) <= rotateHandleHitRadius;
+      }
+
+      /** Prüft, ob sich der übergebene Pixel über dem Rechteck-Körper befindet. */
+      function isPixelOverRectangle(map: OLMap, pixel: Pixel): boolean {
+        return !!map.forEachFeatureAtPixel(
+          pixel,
+          (feature) => feature.get(printAreaRoleKey) === printAreaRectangleRole,
+          { hitTolerance: 4 },
+        );
+      }
+
+      /**
+       * Erstellt die Pointer-Interaction: Ziehen am Rotationsgriff dreht das
+       * Rechteck um sein Zentrum, Ziehen am Rechteck selbst verschiebt es.
+       */
+      function createPrintAreaInteraction(): PointerInteraction {
+        let dragMode: 'translate' | 'rotate' | null = null;
+        let dragStartCoordinate: Coordinate | null = null;
+        let dragStartCenter: Coordinate | null = null;
+        let baseHandleAngle = 0;
+
+        return new PointerInteraction({
+          handleDownEvent: (evt: MapBrowserEvent): boolean => {
+            if (!printAreaState || !rectangleFeature || !handleFeature) {
+              return false;
+            }
+            const { map } = evt;
+
+            if (isPixelOverHandle(map, evt.pixel)) {
+              dragMode = 'rotate';
+              baseHandleAngle = Math.atan2(
+                printAreaState.height / 2,
+                printAreaState.width / 2,
+              );
+              return true;
+            }
+
+            if (isPixelOverRectangle(map, evt.pixel)) {
+              dragMode = 'translate';
+              dragStartCoordinate = evt.coordinate;
+              dragStartCenter = [...printAreaState.center];
+              return true;
+            }
+
+            return false;
+          },
+          handleDragEvent: (evt: MapBrowserEvent): void => {
+            if (!printAreaState) {
+              return;
+            }
+            if (dragMode === 'rotate') {
+              const dx = evt.coordinate[0] - printAreaState.center[0];
+              const dy = evt.coordinate[1] - printAreaState.center[1];
+              printAreaState.rotation = Math.atan2(dy, dx) - baseHandleAngle;
+              updatePrintAreaGeometries();
+            } else if (
+              dragMode === 'translate' &&
+              dragStartCoordinate &&
+              dragStartCenter
+            ) {
+              const dx = evt.coordinate[0] - dragStartCoordinate[0];
+              const dy = evt.coordinate[1] - dragStartCoordinate[1];
+              printAreaState.center = [
+                dragStartCenter[0] + dx,
+                dragStartCenter[1] + dy,
+              ];
+              updatePrintAreaGeometries();
+            }
+          },
+          handleUpEvent: (): boolean => {
+            dragMode = null;
+            dragStartCoordinate = null;
+            dragStartCenter = null;
+            return false;
+          },
+        });
+      }
+
+      /**
+       * Registriert einen pointermove-Listener, der den Karten-Cursor je nach
+       * Hover-Ziel anpasst: Rotationsgriff -> rotateCursorStyle,
+       * Rechteck-Körper -> printAreaMoveCursorStyle, sonst Standard-Cursor.
+       */
+      function createPrintAreaPointerMoveListener(
+        map: OpenlayersMap,
+      ): EventsKey {
+        return map.olMap.on('pointermove', (evt: MapBrowserEvent) => {
+          if (!printAreaState) {
+            return;
+          }
+          const target = map.olMap.getTargetElement();
+          if (!target) {
+            return;
+          }
+          if (isPixelOverHandle(evt.map, evt.pixel)) {
+            target.style.cursor = rotateCursorStyle;
+          } else if (isPixelOverRectangle(evt.map, evt.pixel)) {
+            target.style.cursor = printAreaMoveCursorStyle;
+          } else {
+            target.style.cursor = '';
+          }
+        });
+      }
+
+      /** Legt Rechteck-Layer inkl. Rotationsgriff und Drag-/Rotate-Interaction an (nur für 2D-Karten). */
+      function addPrintAreaLayer(): void {
+        const activeMap = app.maps.activeMap;
+        if (!(activeMap instanceof OpenlayersMap)) {
+          return;
+        }
+        if (!createPrintAreaFeatures(activeMap)) {
+          return;
+        }
+
+        printAreaLayer = new VectorLayer({
+          name: printAreaLayerName,
+          projection: {
+            epsg: activeMap.olMap.getView().getProjection().getCode(),
+          },
+          style: printAreaStyleFunction,
+        });
+        printAreaLayer.addFeatures([rectangleFeature!, handleFeature!]);
+        app.layers.add(printAreaLayer);
+        printAreaLayer.activate().catch((error: unknown) => {
+          getLogger(plugin.name).error(
+            `Activating print-area layer failed: ${error as string}`,
+          );
+        });
+
+        printAreaMap = activeMap;
+        printAreaInteraction = createPrintAreaInteraction();
+        activeMap.olMap.addInteraction(printAreaInteraction);
+        printAreaPointerMoveKey = createPrintAreaPointerMoveListener(activeMap);
+      }
+
+      /** Entfernt Rechteck-Layer, Features, Interaction und Cursor-Listener wieder vollständig. */
+      function removePrintAreaLayer(): void {
+        if (printAreaPointerMoveKey) {
+          unByKey(printAreaPointerMoveKey);
+          printAreaPointerMoveKey = null;
+        }
+        if (printAreaMap) {
+          const target = printAreaMap.olMap.getTargetElement();
+          if (target) {
+            target.style.cursor = '';
+          }
+        }
+        if (printAreaInteraction && printAreaMap) {
+          printAreaMap.olMap.removeInteraction(printAreaInteraction);
+        }
+        printAreaInteraction = null;
+        printAreaMap = null;
+
+        if (printAreaLayer) {
+          app.layers.remove(printAreaLayer);
+          printAreaLayer.destroy();
+          printAreaLayer = null;
+        }
+        rectangleFeature = null;
+        handleFeature = null;
+        printAreaState = null;
       }
 
       function handleMapActivated(newMap: unknown): void {
@@ -266,6 +613,10 @@
         } else {
           currentScale.value = '';
         }
+        // Rechteck neu anlegen, sobald zwischen 2D-/3D-Karte gewechselt wird,
+        // solange das Print-Fenster geöffnet ist.
+        removePrintAreaLayer();
+        addPrintAreaLayer();
       }
 
       // einmalig für den initialen Zustand beim Öffnen des Windows,
@@ -277,7 +628,114 @@
       const mapActivatedListener = app.maps.mapActivated.addEventListener(
         handleMapActivated,
       );
-      // --- ENDE Maßstab Logik ---
+      // --- ENDE Maßstab / Druckbereich Logik ---
+
+      /** Wartet auf den nächsten vollständigen Kartenrender-Durchlauf (nach View-Änderungen nötig, bevor ein Screenshot gemacht wird). */
+      function waitForRenderComplete(map: OpenlayersMap): Promise<void> {
+        return new Promise((resolve) => {
+          map.olMap.once('rendercomplete', () => resolve());
+          map.olMap.render();
+        });
+      }
+
+      /**
+       * Schneidet aus dem vollflächigen Karten-Screenshot (`sourceCanvas`,
+       * i.d.R. mit höherer Auflösung als das DOM-Element gerendert, für die
+       * gewünschte Druck-PPI) genau den Bereich aus, der dem
+       * Druckbereich-Rechteck entspricht. `region` ist in DOM-Pixeln des
+       * Karten-Elements angegeben und wird proportional auf die tatsächliche
+       * Canvas-Größe skaliert.
+       */
+      function cropCanvasToPrintArea(
+        sourceCanvas: HTMLCanvasElement,
+        domSize: Size,
+        region: { x: number; y: number; width: number; height: number },
+      ): HTMLCanvasElement {
+        const scaleX = sourceCanvas.width / domSize.width;
+        const scaleY = sourceCanvas.height / domSize.height;
+
+        const sx = region.x * scaleX;
+        const sy = region.y * scaleY;
+        const sWidth = region.width * scaleX;
+        const sHeight = region.height * scaleY;
+
+        const target = document.createElement('canvas');
+        target.width = Math.round(sWidth);
+        target.height = Math.round(sHeight);
+        const ctx = target.getContext('2d');
+        if (!ctx) {
+          return sourceCanvas;
+        }
+        ctx.drawImage(
+          sourceCanvas,
+          sx,
+          sy,
+          sWidth,
+          sHeight,
+          0,
+          0,
+          target.width,
+          target.height,
+        );
+        return target;
+      }
+
+      /**
+       * Richtet die Kartenansicht temporär exakt auf das Druckbereich-Rechteck
+       * aus (Zentrum, Rotation, sowie eine Resolution, die das Rechteck
+       * vollständig und unbeschnitten im Viewport zeigt) und liefert sowohl
+       * eine Restore-Funktion als auch die Pixel-Region (in DOM-Koordinaten
+       * des Karten-Elements), auf die der spätere Screenshot zugeschnitten
+       * werden muss. Gibt `undefined` zurück, wenn kein Rechteck aktiv ist
+       * (z.B. 3D-/Oblique-Karte).
+       */
+      function alignViewToPrintArea(
+        map: OpenlayersMap,
+        domSize: Size,
+      ): { region: { x: number; y: number; width: number; height: number }; aspectRatio: number; scaleLabel: string; restore: () => void } | undefined {
+        if (!printAreaState) {
+          return undefined;
+        }
+        const view = map.olMap.getView();
+        const originalCenter = view.getCenter();
+        const originalResolution = view.getResolution();
+        const originalRotation = view.getRotation();
+
+        const rectState = printAreaState;
+        // Resolution so wählen, dass das Rechteck in beiden Dimensionen
+        // vollständig sichtbar ist (kein Beschnitt), unabhängig vom
+        // Seitenverhältnis des Karten-Elements.
+        const resolution = Math.max(
+          rectState.width / domSize.width,
+          rectState.height / domSize.height,
+        );
+
+        view.setRotation(rectState.rotation);
+        view.setCenter(rectState.center);
+        view.setResolution(resolution);
+
+        const region = {
+          x: domSize.width / 2 - rectState.width / resolution / 2,
+          y: domSize.height / 2 - rectState.height / resolution / 2,
+          width: rectState.width / resolution,
+          height: rectState.height / resolution,
+        };
+
+        return {
+          region,
+          aspectRatio: rectState.width / rectState.height,
+          scaleLabel: formatScaleLabel(resolution),
+          restore: (): void => {
+            view.setRotation(originalRotation ?? 0);
+            if (originalCenter) {
+              view.setCenter(originalCenter);
+            }
+            if (originalResolution !== undefined) {
+              view.setResolution(originalResolution);
+            }
+          },
+        };
+      }
 
       /** Creates pdf by utilizing the PDFCreator. Handling is done by default function in shootScreenAndHandle.js */
       async function createPdf(): Promise<void> {
@@ -286,11 +744,26 @@
         const mapElement = getMapElement(activeMap);
         const mapSize = getMapSize(activeMap);
 
-        // Verwendet den bereits reaktiv gepflegten Maßstab inkl. übersetztem Präfix,
-        // nur wenn eine 2D-Karte aktiv ist.
+        // Kartenansicht ggf. auf das Druckbereich-Rechteck ausrichten, damit
+        // nur der durch das Rechteck vorgegebene Ausschnitt gedruckt wird.
+        let printAreaAlignment:
+          | ReturnType<typeof alignViewToPrintArea>
+          | undefined;
+        if (activeMap instanceof OpenlayersMap) {
+          printAreaAlignment = alignViewToPrintArea(activeMap, mapSize);
+          if (printAreaAlignment) {
+            await waitForRenderComplete(activeMap);
+          }
+        }
+
+        // Verwendet entweder den auf das Rechteck bezogenen Maßstab, oder
+        // (ohne aktives Rechteck) den bereits reaktiv gepflegten Maßstab der
+        // vollen Kartenansicht.
         const scale =
-          is2DMap.value && currentScale.value
-            ? t('print.pdf.scale', { scale: currentScale.value })
+          is2DMap.value && (printAreaAlignment?.scaleLabel || currentScale.value)
+            ? t('print.pdf.scale', {
+                scale: printAreaAlignment?.scaleLabel ?? currentScale.value,
+              })
             : undefined;
 
         let logo;
@@ -425,7 +898,8 @@
           )!,
         };
 
-        const mapAspectRatio = mapSize.width / mapSize.height;
+        const mapAspectRatio =
+          printAreaAlignment?.aspectRatio ?? mapSize.width / mapSize.height;
 
         const pdfCreator = new PDFCreator();
         await pdfCreator
@@ -450,10 +924,24 @@
             const width =
               pdfCreator.imgPlacement!.size.width * state.selectedPpi;
 
+            const createFn = printAreaAlignment
+              ? async (
+                  canvas: HTMLCanvasElement,
+                  translate: (s: string) => string,
+                ): Promise<Blob> => {
+                  const cropped = cropCanvasToPrintArea(
+                    canvas,
+                    mapSize,
+                    printAreaAlignment!.region,
+                  );
+                  return pdfCreator.create(cropped, translate);
+                }
+              : pdfCreator.create.bind(pdfCreator);
+
             await createAndHandleBlob(
               app,
               width,
-              pdfCreator.create.bind(pdfCreator),
+              createFn,
               'map.pdf',
               overlayWindows,
             );
@@ -465,6 +953,7 @@
             });
           })
           .finally(() => {
+            printAreaAlignment?.restore();
             running.value = false;
           });
       }
@@ -474,6 +963,7 @@
         featureInfoListener();
         detachResolutionListener();
         mapActivatedListener();
+        removePrintAreaLayer();
       });
 
       return {
