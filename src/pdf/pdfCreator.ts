@@ -68,8 +68,17 @@ type PDFCreatorOptions = {
   title?: string;
   /** The map logo. */
   logo?: HTMLImageElement;
-  /** The aspect ratio of the input image. */
+  /** The aspect ratio of the input image. Used as fallback when `imageSize` is not set. */
   imgRatio: number;
+  /**
+   * Feste, konfigurierte Größe des Kartenbereichs (in Inch), z.B. aus
+   * `formatList[format][orientation]` der Plugin-Konfiguration. Wenn
+   * gesetzt, wird der Kartenbereich exakt in dieser Größe platziert
+   * (zentriert, kein Letterboxing) statt dynamisch anhand des
+   * verfügbaren Platzes und des Bild-Seitenverhältnisses berechnet zu
+   * werden.
+   */
+  imageSize?: Size;
   /** The description below the image. */
   description?: string;
   /** The contact information in the lower left corner. */
@@ -245,15 +254,35 @@ export default class PDFCreator {
       this.qrCodePlacement = this._calcQrCodePlacement();
     }
 
+    // Logo VOR dem Titel berechnen: Kopfzeile ist konzeptionell eine
+    // 3-Spalten-Tabelle (QR-Code / Titel / Logo). QR-Code und Logo haben
+    // eine feste, von sich selbst abhängige Breite (Spalte 1 und 3); der
+    // Titel (Spalte 2, flexibel) muss beide kennen, um seine verfügbare
+    // Breite korrekt zu berechnen — ohne das würde ein langer Titel mit
+    // dem rechts platzierten Logo kollidieren können.
+    if (pdfCreatorOptions.logo) {
+      this._setTextStyle('title');
+      this.logo = pdfCreatorOptions.logo;
+      this.logoPlacement = this._calcLogoPlacement(this.logo);
+    }
+
     if (pdfCreatorOptions.title) {
       let width = this._calcElementWidth(
         this.formatting[`title.widthPortion.${pdfCreatorOptions.orientation}`],
       );
       let x = this.formatting.pageMargins[3];
+      // Spalte 1 (QR-Code): schiebt die Titel-Spalte nach rechts und
+      // verkleinert ihre Breite um genau den belegten Platz.
       if (this.qrCodePlacement) {
         x += this.qrCodePlacement.size.width + this.formatting.elementMargin;
         width -=
           this.qrCodePlacement.size.width + this.formatting.elementMargin;
+      }
+      // Spalte 3 (Logo): verkleinert die Titel-Spalte am rechten Ende um
+      // genau den belegten Platz (x bleibt unverändert, nur die Breite
+      // schrumpft, da das Logo rechtsbündig sitzt).
+      if (this.logoPlacement) {
+        width -= this.logoPlacement.size.width + this.formatting.elementMargin;
       }
       const maxLineCount =
         this.formatting[`title.maxLineCount.${this.orientation}`];
@@ -270,12 +299,6 @@ export default class PDFCreator {
         maxLineCount,
         x,
       );
-    }
-
-    if (pdfCreatorOptions.logo) {
-      this._setTextStyle('title');
-      this.logo = pdfCreatorOptions.logo;
-      this.logoPlacement = this._calcLogoPlacement(this.logo);
     }
 
     if (pdfCreatorOptions.scale) {
@@ -367,7 +390,13 @@ export default class PDFCreator {
       );
     }
 
-    this.imgPlacement = this._calcImagePlacement(pdfCreatorOptions.imgRatio);
+    // Kartenbereich: bei konfigurierter fester Größe (formatList[format][orientation])
+    // wird diese exakt (zentriert, ohne Letterboxing) verwendet. Ohne
+    // konfigurierte Größe bleibt die bisherige dynamische, seitenverhältnis-
+    // erhaltende Berechnung als Fallback erhalten.
+    this.imgPlacement = pdfCreatorOptions.imageSize
+      ? this._calcFixedImagePlacement(pdfCreatorOptions.imageSize)
+      : this._calcImagePlacement(pdfCreatorOptions.imgRatio);
 
     if (pdfCreatorOptions.copyright) {
       this._setTextStyle('info');
@@ -463,20 +492,36 @@ export default class PDFCreator {
   }
 
   /**
-   * Calcutlates placement of the logo. Position depends on page margins. Height does depend on font size of title.
+   * Gemeinsame Bounding-Box-Größe für Logo und QR-Code in der Kopfzeile —
+   * beide werden in dieselbe quadratische Fläche eingepasst, damit sie
+   * unabhängig vom Seitenverhältnis des Logos wirklich gleich groß wirken
+   * (siehe {@link _calcLogoPlacement}). Etwas großzügiger als die reine
+   * Titel-Zeilenhöhe (logo.scale), damit der QR-Code gut scannbar bleibt.
+   */
+  private _calcHeaderIconSize(): number {
+    return this._calcTotalLineHeight(this.formatting['logo.scale']) * 2.5;
+  }
+
+  /**
+   * Calcutlates placement of the logo. Position depends on page margins.
+   * Das Logo wird in die von {@link _calcHeaderIconSize} vorgegebene
+   * quadratische Fläche eingepasst (contain, Seitenverhältnis bleibt
+   * erhalten) — bei einem breiten (Querformat-)Logo bestimmt also die
+   * Breite die Verkleinerung, nicht mehr pauschal die Höhe. So wirkt das
+   * Logo unabhängig von seinem Seitenverhältnis gleich groß wie der
+   * (quadratische) QR-Code.
    * @param logo The logo.
    */
   private _calcLogoPlacement(logo: HTMLImageElement): ElementPlacement {
     const aspectRatio = logo.width / logo.height;
-    const printHeight = this._calcTotalLineHeight(
-      this.formatting['logo.scale'],
-    );
+    const boundingSize = this._calcHeaderIconSize();
+    const printWidth =
+      aspectRatio >= 1 ? boundingSize : boundingSize * aspectRatio;
+    const printHeight =
+      aspectRatio >= 1 ? boundingSize / aspectRatio : boundingSize;
     return {
       coords: {
-        x:
-          this.pdfSize.width -
-          this.formatting.pageMargins[3] -
-          printHeight * aspectRatio,
+        x: this.pdfSize.width - this.formatting.pageMargins[3] - printWidth,
         y:
           this.formatting.pageMargins[0] +
           this._calcTotalLineHeight(
@@ -486,7 +531,7 @@ export default class PDFCreator {
           printHeight / 2,
       },
       size: {
-        width: printHeight * aspectRatio,
+        width: printWidth,
         height: printHeight,
       },
     };
@@ -496,9 +541,11 @@ export default class PDFCreator {
    * Calcutlates placement of the QR code linking to the map. Printed in the upper left
    * corner, directly before the title, vertically centered to the title's line height —
    * mirrors {@link _calcLogoPlacement}, just on the opposite side of the page.
+   * Nutzt dieselbe Höhe wie das Logo ({@link _calcHeaderIconSize}), damit
+   * beide in der Kopfzeile gleich groß wirken.
    */
   private _calcQrCodePlacement(): ElementPlacement {
-    const printSize = this._calcTotalLineHeight(this.formatting['logo.scale']);
+    const printSize = this._calcHeaderIconSize();
     return {
       coords: {
         x: this.formatting.pageMargins[3],
@@ -620,32 +667,50 @@ export default class PDFCreator {
   }
 
   /**
+   * Berechnet die obere Kante des Kartenbereichs: direkt unterhalb von
+   * Titel, Logo oder QR-Code (je nachdem, was vorhanden ist), sonst am
+   * oberen Seitenrand. Wird sowohl von der dynamischen ({@link _calcImagePlacement})
+   * als auch von der festen, konfigurierten Platzierung
+   * ({@link _calcFixedImagePlacement}) des Kartenbereichs verwendet.
+   */
+  private _calcImageUpperBorder(): number {
+    if (this.title) {
+      return (
+        this.titlePlacement!.coords.y +
+        this.titlePlacement!.size.height +
+        this.formatting.elementMargin
+      );
+    }
+    if (this.logo) {
+      return (
+        this.logoPlacement!.coords.y +
+        this.logoPlacement!.size.height +
+        this.formatting.elementMargin
+      );
+    }
+    if (this.qrCodePlacement) {
+      return (
+        this.qrCodePlacement.coords.y +
+        this.qrCodePlacement.size.height +
+        this.formatting.elementMargin
+      );
+    }
+    return this.formatting.pageMargins[0];
+  }
+
+  /**
    * Calculates the placement of the screenshot with max width and max height.
    * Position depends on page margins and position and height of title + description.
-   * Max height and max width is the available space on the page.
+   * Max height and max width is the available space on the page. The image's
+   * aspect ratio is preserved, which can leave white bars left/right or
+   * top/bottom (letterboxing) when it doesn't match the available space's
+   * aspect ratio. Used as a fallback when no `imageSize` is configured for
+   * the selected format/orientation — see {@link _calcFixedImagePlacement}.
    * @param aspectRatio The aspect ratio of the image to be placed on the pdf.
    * @returns Placement of screenshot.
    */
   private _calcImagePlacement(aspectRatio: number): ElementPlacement {
-    let upperBorder;
-    if (this.title) {
-      upperBorder =
-        this.titlePlacement!.coords.y +
-        this.titlePlacement!.size.height +
-        this.formatting.elementMargin;
-    } else if (this.logo) {
-      upperBorder =
-        this.logoPlacement!.coords.y +
-        this.logoPlacement!.size.height +
-        this.formatting.elementMargin;
-    } else if (this.qrCodePlacement) {
-      upperBorder =
-        this.qrCodePlacement.coords.y +
-        this.qrCodePlacement.size.height +
-        this.formatting.elementMargin;
-    } else {
-      upperBorder = this.formatting.pageMargins[0];
-    }
+    const upperBorder = this._calcImageUpperBorder();
     let lowerBorder;
     if (this.description) {
       lowerBorder =
@@ -678,6 +743,31 @@ export default class PDFCreator {
 
     return {
       coords: { x, y: upperBorder },
+      size: { width, height },
+    };
+  }
+
+  /**
+   * Platziert den Kartenbereich linksbündig auf pageMargins[3] und immer
+   * exakt `maxLineWidth` breit (statt der rohen Config-Breite zentriert) —
+   * dadurch bündig mit Titel/Beschreibung/Kontakt-Infos (die ebenfalls auf
+   * `maxLineWidth`/`pageMargins[3]` basieren) und mit dem rechtsbündigen
+   * Logo (dessen rechte Kante ebenfalls bei `pdfSize.width - pageMargins[3]`
+   * liegt). Das Seitenverhältnis aus der Config (`size.width / size.height`)
+   * bleibt dabei erhalten — nur gleichmäßig auf die tatsächlich verfügbare
+   * Breite hoch-/runterskaliert, damit keine Verzerrung gegenüber dem
+   * zugeschnittenen Kartenausschnitt entsteht (dessen Seitenverhältnis exakt
+   * denselben Config-Werten folgt, siehe Druckbereich-Rechteck in
+   * PdfWindow.vue).
+   * @param size Die konfigurierte Breite/Höhe des Kartenbereichs in Inch — hier nur als Quelle für das Seitenverhältnis genutzt, nicht als absolute Größe.
+   */
+  private _calcFixedImagePlacement(size: Size): ElementPlacement {
+    const upperBorder = this._calcImageUpperBorder();
+    const aspectRatio = size.width / size.height;
+    const width = this.maxLineWidth;
+    const height = width / aspectRatio;
+    return {
+      coords: { x: this.formatting.pageMargins[3], y: upperBorder },
       size: { width, height },
     };
   }

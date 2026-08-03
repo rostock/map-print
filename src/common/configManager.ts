@@ -79,6 +79,53 @@ export const fontKeysPattern: Record<string, Pattern> = {
   bold: maybe(String),
 };
 
+/** Width/height of the map area in inches. */
+export type MapAreaSize = {
+  width: number;
+  height: number;
+};
+
+/**
+ * A selectable variant of the printed map-area size for a given page
+ * format. Several variants can be defined for the same `format` (e.g. two
+ * differently proportioned "A4" variants) by giving each its own unique
+ * `key` — `format` stays a real, jsPDF-compatible page format, only `key`
+ * (and optionally `title`) identify the variant in the UI.
+ * If a matching variant exists for the selected format, the map area in the
+ * PDF is always placed at exactly this size (no letterboxing) instead of
+ * being calculated dynamically from the available space.
+ */
+export type ImageSizeOption = {
+  /** Unique key, used as the select value and to persist the user's choice. */
+  key: string;
+  /** Label shown in the size-variant select. Falls back to `key` when omitted. */
+  title?: string;
+  /** The underlying jsPDF page format this variant belongs to. */
+  format: keyof typeof standardPageSizes;
+  /** Map area size (in inch) used in portrait orientation. */
+  portrait: MapAreaSize;
+  /**
+   * Map area size (in inch) used in landscape orientation. Falls back to
+   * `portrait` with width/height swapped when omitted.
+   */
+  landscape?: MapAreaSize;
+};
+
+/** Possible keys of a {@link MapAreaSize} with corresponding type. */
+const mapAreaSizeKeysPattern: Record<string, Pattern> = {
+  width: Number,
+  height: Number,
+};
+
+/** Possible keys of an {@link ImageSizeOption} with corresponding type. */
+const imageSizeOptionKeysPattern: Record<string, Pattern> = {
+  key: String,
+  title: maybe(String),
+  format: oneOf(...Object.keys(standardPageSizes)),
+  portrait: strict(mapAreaSizeKeysPattern),
+  landscape: maybe(strict(mapAreaSizeKeysPattern)),
+};
+
 /** Configuration options of the print plugin. */
 export type PrintConfig = {
   /** List of page formates the user can select from. */
@@ -133,6 +180,16 @@ export type PrintConfig = {
   charLimit?: number;
   /** Font configuration used for the PDF. */
   font?: FontConfig;
+  /**
+   * List of selectable map-area size variants (one or more per page
+   * format, see {@link ImageSizeOption}). If a variant exists for the
+   * currently selected format, the map area in the PDF always fills
+   * exactly that size (no letterboxing).
+   * @example [{ key: 'A4', format: 'A4', portrait: { width: 7.27, height: 9.29 }, landscape: { width: 10.69, height: 5.87 } }]
+   */
+  imageSizeList?: Array<ImageSizeOption>;
+  /** The key of the default map-area size variant. Needs to be in imageSizeList. */
+  imageSizeDefault?: string | undefined;
 };
 
 export type PrintState = {
@@ -144,6 +201,8 @@ export type PrintState = {
   title: string;
   description: string;
   selectedResolution: number;
+  /** The key of the currently selected map-area size variant (see {@link ImageSizeOption}), if any is applicable for selectedFormat. */
+  selectedImageSize?: string;
 };
 
 /**
@@ -157,19 +216,44 @@ export function getConfigAndState(
   defaultOptions: Required<PrintConfig>,
 ): { config: Required<PrintConfig>; state: PrintState } {
   /**
-   * available format list;
+   * Selectable map-area size variants (0..n per page format). Not merged
+   * with defaultOptions when explicitly set to an empty array by the user
+   * (an empty list is a valid, meaningful choice: "no fixed sizes, always
+   * calculate dynamically") — only falls back to defaultOptions when
+   * entirely unset. Computed early so formatList/formatDefault below can
+   * derive from it when not explicitly configured.
+   * @example [{ key: 'A4', format: 'A4', portrait: { width: 7.27, height: 9.29 }, landscape: { width: 10.69, height: 5.87 } }]
+   */
+  const imageSizeList: Array<ImageSizeOption> =
+    config.imageSizeList ?? defaultOptions.imageSizeList ?? [];
+
+  /**
+   * available format list. When not explicitly set, derived from the
+   * formats used in imageSizeList (deduplicated, in their given order) —
+   * so a config only listing imageSizeList doesn't need to redundantly
+   * repeat the same format names in formatList. Only falls back to
+   * defaultOptions.formatList when neither is given.
    * @example ['A2', 'A3', 'A4', 'A5']
    * @api
    */
   const formatList: Array<keyof typeof standardPageSizes> =
-    config.formatList || defaultOptions.formatList;
+    config.formatList ||
+    (imageSizeList.length
+      ? [...new Set(imageSizeList.map((option) => option.format))]
+      : defaultOptions.formatList);
 
   /**
-   * The default page format
+   * The default page format. When not explicitly set, derived from the
+   * format of the default (or, lacking that, first) imageSizeList variant,
+   * falling back to defaultOptions.formatDefault.
    * @example 'A4'
    */
   const formatDefault: keyof typeof standardPageSizes =
-    config.formatDefault || defaultOptions.formatDefault;
+    config.formatDefault ||
+    imageSizeList.find((option) => option.key === config.imageSizeDefault)
+      ?.format ||
+    imageSizeList[0]?.format ||
+    defaultOptions.formatDefault;
 
   /**
    * available values for pixel per inch (PPI)
@@ -332,6 +416,16 @@ export function getConfigAndState(
   const font: FontConfig =
     config.font || defaultOptions.font;
 
+  /**
+   * The key of the default map-area size variant. Falls back to the first
+   * variant matching formatDefault, if any.
+   * @example 'A4'
+   */
+  const imageSizeDefault: string | undefined =
+    config.imageSizeDefault ??
+    defaultOptions.imageSizeDefault ??
+    imageSizeList.find((option) => option.format === formatDefault)?.key;
+
   return {
     // setup configuration of the plugin
     config: {
@@ -358,6 +452,8 @@ export function getConfigAndState(
       contactDetails,
       charLimit,
       font,
+      imageSizeList,
+      imageSizeDefault,
       // screenshot
       resolutionList,
       resolutionDefault,
@@ -369,6 +465,7 @@ export function getConfigAndState(
       selectedOrientation: orientationDefault,
       title: '',
       description: '',
+      selectedImageSize: imageSizeDefault,
       // screenshot
       selectedResolution: resolutionDefault,
     }),
@@ -379,10 +476,25 @@ export function validate(options: PrintConfig): void {
   const defaultOptions = getDefaultOptions();
   try {
     check(
+      options.imageSizeList,
+      maybe([strict(imageSizeOptionKeysPattern)]),
+    );
+    const imageSizeList =
+      options.imageSizeList || defaultOptions.imageSizeList || [];
+
+    check(
       options.formatList,
       maybe([oneOf(...Object.keys(standardPageSizes))]),
     );
-    const formatList = options.formatList || defaultOptions.formatList;
+    // Mirrors the derivation in getConfigAndState: formatList falls back to
+    // the formats used in imageSizeList before falling back to
+    // defaultOptions.formatList — so a config that only sets imageSizeList
+    // (and a matching formatDefault) validates correctly.
+    const formatList =
+      options.formatList ||
+      (imageSizeList.length
+        ? [...new Set(imageSizeList.map((option) => option.format))]
+        : defaultOptions.formatList);
     check(options.formatDefault, maybe(oneOf(...formatList)));
     check(options.ppiList, maybe([Number]));
     const ppiList = options.ppiList || defaultOptions.ppiList;
@@ -415,6 +527,10 @@ export function validate(options: PrintConfig): void {
     check(options.resolutionDefault, maybe(oneOf(...resolutionList)));
     check(options.contactDetails, maybe(strict(contactKeysPattern)));
     check(options.font, maybe(strict(fontKeysPattern)));
+    check(
+      options.imageSizeDefault,
+      maybe(oneOf(...imageSizeList.map((option) => option.key))),
+    );
   } catch (err) {
     getLogger(name).error('Invalid config', err);
   }

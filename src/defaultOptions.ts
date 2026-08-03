@@ -34,6 +34,12 @@ export default (): Required<PrintConfig> => {
       name: "RobotoSlab",
       regular: "plugin-assets/fonts/RobotoSlab-Regular.ttf",
       bold: "plugin-assets/fonts/RobotoSlab-Bold.ttf"
-    }
+    },
+    // Kartenbereich-Größen-Varianten: standardmäßig keine feste Größe
+    // konfiguriert, der Kartenbereich wird dann wie bisher dynamisch
+    // (mit möglichem Letterboxing) berechnet, siehe
+    // PDFCreator._calcImagePlacement / _calcFixedImagePlacement.
+    imageSizeList: [],
+    imageSizeDefault: undefined,
   };
 };
