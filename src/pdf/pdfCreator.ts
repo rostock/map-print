@@ -495,11 +495,32 @@ export default class PDFCreator {
    * Gemeinsame Bounding-Box-Größe für Logo und QR-Code in der Kopfzeile —
    * beide werden in dieselbe quadratische Fläche eingepasst, damit sie
    * unabhängig vom Seitenverhältnis des Logos wirklich gleich groß wirken
-   * (siehe {@link _calcLogoPlacement}). Etwas großzügiger als die reine
-   * Titel-Zeilenhöhe (logo.scale), damit der QR-Code gut scannbar bleibt.
+   * (siehe {@link _calcLogoPlacement}). Angestrebt wird etwas mehr als die
+   * reine Titel-Zeilenhöhe (logo.scale), damit der QR-Code gut scannbar
+   * bleibt — begrenzt aber auf die tatsächlich für die Kopfzeile
+   * reservierte Höhe (title.maxLineCount der aktuellen Orientierung).
+   * Ohne dieses Limit könnte das Icon über den oberen Seitenrand
+   * hinausragen, da es bei der Y-Zentrierung auf diese Zeilenhöhe bezogen
+   * wird (siehe _calcLogoPlacement/_calcQrCodePlacement).
+   *
+   * WICHTIG: setzt explizit den 'title'-Textstil, BEVOR Zeilenhöhen
+   * berechnet werden. _calcTotalLineHeight() liest pdfDoc.getLineHeight(),
+   * was vom AKTUELL AKTIVEN Textstil des jsPDF-Dokuments abhängt — ohne
+   * dieses explizite Setzen würde das Ergebnis vom Aufrufzeitpunkt
+   * abhängen: _calcQrCodePlacement() lief in setup() bisher VOR dem ersten
+   * _setTextStyle('title')-Aufruf (jsPDF-Default-Schriftgröße, ~16pt),
+   * _calcLogoPlacement() lief DANACH (korrekt 20pt/'title') — beide
+   * lieferten dadurch unterschiedliche Ergebnisse, obwohl dieselbe Methode
+   * aufgerufen wurde.
    */
   private _calcHeaderIconSize(): number {
-    return this._calcTotalLineHeight(this.formatting['logo.scale']) * 2.5;
+    this._setTextStyle('title');
+    const desired =
+      this._calcTotalLineHeight(this.formatting['logo.scale']) * 2.5;
+    const availableRowHeight = this._calcTotalLineHeight(
+      this.formatting[`title.maxLineCount.${this.orientation}`],
+    );
+    return Math.min(desired, availableRowHeight);
   }
 
   /**

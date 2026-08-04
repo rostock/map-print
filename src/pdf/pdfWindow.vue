@@ -261,7 +261,7 @@
    */
   const rotateArrowPath = 'M23 4v6h-6 M20.49 15a9 9 0 1 1-2.12-9.36L23 10';
   const rotateCursorSvg =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24">' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">' +
     `<path d="${rotateArrowPath}" fill="none" stroke="#000000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>` +
     `<path d="${rotateArrowPath}" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` +
     '</svg>';
@@ -548,18 +548,22 @@
 
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
+        console.log(theme.current.value.colors.primary);
+        console.log(theme);
         if (feature.get(printAreaRoleKey) === printAreaHandleRole) {
           return new Style({
             image: new CircleStyle({
               radius: 7,
-              fill: new Fill({ color: theme.current.value.colors.secondary }),
+              //fill: new Fill({ color: theme.current.value.colors.secondary }),
+              fill: new Fill({ color: theme.current.value.colors.primary }),
               stroke: new Stroke({ color: '#FFFFFF', width: 2 }),
             }),
           });
         }
         return new Style({
           stroke: new Stroke({
-            color: theme.current.value.colors.primary,
+            //color: theme.current.value.colors.primary,
+            color: 'red',
             width: 2,
           }),
         });
@@ -740,7 +744,6 @@
         if (!createPrintAreaFeatures(activeMap)) {
           return;
         }
-
         printAreaLayer = new VectorLayer({
           name: printAreaLayerName,
           projection: {

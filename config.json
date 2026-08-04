@@ -14,32 +14,25 @@
     {
       "key": "A5",
       "format": "A5",
-      "portrait": { "width": 5.13, "height": 6.37 },
+      "portrait": { "width": 5.13, "height": 5.6 },
       "landscape": { "width": 7.57, "height": 3.93 }
     },
     {
       "key": "A4",
       "format": "A4",
-      "portrait": { "width": 7.27, "height": 9.29 },
+      "portrait": { "width": 7.27, "height": 8.29 },
       "landscape": { "width": 10.69, "height": 5.87 }
-    },
-    {
-      "key": "A4-kompakt",
-      "title": "A4 (kompakt)",
-      "format": "A4",
-      "portrait": { "width": 7.47, "height": 9.99 },
-      "landscape": { "width": 10.89, "height": 6.57 }
     },
     {
       "key": "A3",
       "format": "A3",
-      "portrait": { "width": 10.29, "height": 13.44 },
+      "portrait": { "width": 10.29, "height": 12.64 },
       "landscape": { "width": 15.14, "height": 8.59 }
     },
     {
       "key": "A2",
       "format": "A2",
-      "portrait": { "width": 14.74, "height": 19.39 },
+      "portrait": { "width": 14.74, "height": 18.89 },
       "landscape": { "width": 21.59, "height": 12.54 }
     }
   ],
