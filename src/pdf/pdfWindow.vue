@@ -409,6 +409,14 @@
         return `1:${Math.round(scaleDenominator).toLocaleString('de-DE')}`;
       }
 
+      /** Liefert den aktuellen, numerischen Kartenmaßstab (Nenner) der aktiven 2D-Ansicht, oder undefined — Grundlage für den Maßstabsbalken im Fallback-Fall ohne Druckbereich-Rechteck. */
+      function computeCurrentScaleDenominator(
+        map: OpenlayersMap,
+      ): number | undefined {
+        const resolution = map.olMap.getView().getResolution();
+        return resolution ? resolution * 39.37 * 96 : undefined;
+      }
+
       const updateScale = (): void => {
         const activeMap = app.maps.activeMap;
         if (!(activeMap instanceof OpenlayersMap)) {
@@ -548,22 +556,18 @@
 
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
-        console.log(theme.current.value.colors.primary);
-        console.log(theme);
         if (feature.get(printAreaRoleKey) === printAreaHandleRole) {
           return new Style({
             image: new CircleStyle({
               radius: 7,
-              //fill: new Fill({ color: theme.current.value.colors.secondary }),
-              fill: new Fill({ color: theme.current.value.colors.primary }),
+              fill: new Fill({ color: theme.current.value.colors.secondary }),
               stroke: new Stroke({ color: '#FFFFFF', width: 2 }),
             }),
           });
         }
         return new Style({
           stroke: new Stroke({
-            //color: theme.current.value.colors.primary,
-            color: 'red',
+            color: theme.current.value.colors.primary,
             width: 2,
           }),
         });
@@ -744,6 +748,7 @@
         if (!createPrintAreaFeatures(activeMap)) {
           return;
         }
+
         printAreaLayer = new VectorLayer({
           name: printAreaLayerName,
           projection: {
@@ -986,6 +991,12 @@
         const mapElement = getMapElement(activeMap);
         const mapSize = getMapSize(activeMap);
 
+        // Die Rotation des Druckbereichs muss VOR dem Ausrichten bzw.
+        // Zoomen der Kartenansicht gespeichert werden. Nach
+        // alignViewToPrintArea() ist die Druckbereichsrotation in der
+        // Bildschirmansicht bereits weitgehend aufgehoben.
+        const printAreaRotation = printAreaState?.rotation ?? 0;
+
         // Kartenansicht ggf. auf das Druckbereich-Rechteck ausrichten, damit
         // nur der durch das Rechteck vorgegebene Ausschnitt gedruckt wird.
         // Die tatsächliche Bildschirm-Region (inkl. Rotation) wird danach
@@ -1014,6 +1025,26 @@
                   : currentScale.value,
               })
             : undefined;
+
+        // Numerischer Maßstab für den grafischen Maßstabsbalken — dieselbe
+        // Quelle wie oben, nur unformatiert.
+        const scaleDenominatorValue = printAreaScreenRegion
+          ? printScale.value
+          : activeMap instanceof OpenlayersMap
+            ? computeCurrentScaleDenominator(activeMap)
+            : undefined;
+
+        // Rotation für den Nordpfeil: dieselbe Rotation, mit der auch der
+        // Kartenausschnitt beim Zuschneiden entdreht wird (siehe
+        // cropRotatedCanvasToPrintArea) — mit umgekehrtem Vorzeichen, siehe
+        // Herleitung im Kommentar von PDFCreator._drawNorthArrow().
+        //const northArrowRotationValue = printAreaScreenRegion
+        //  ? -printAreaScreenRegion.rotation
+        //  : 0;
+        const northArrowRotationValue =
+          activeMap instanceof OpenlayersMap
+            ? -printAreaRotation
+            : 0;
 
         let logo;
         if (config.printLogo) {
@@ -1176,6 +1207,8 @@
             legend,
             fonts,
             scale,
+            scaleDenominator: scaleDenominatorValue,
+            northArrowRotation: northArrowRotationValue,
           })
           .then(async () => {
             // after setup possible to execute pdfCreator.create()

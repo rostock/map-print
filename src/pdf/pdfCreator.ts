@@ -60,6 +60,18 @@ type Legend = {
 type PDFCreatorOptions = {
   /** The scale of the given map */
   scale?: string;
+  /**
+   * Numerischer Maßstabsnenner (z.B. 1000 für 1:1000) — Grundlage für den
+   * grafischen Maßstabsbalken. Ohne diesen Wert wird kein Balken gezeichnet.
+   */
+  scaleDenominator?: number;
+  /**
+   * Richtung von Nordnach oben auf der Seite, im Uhrzeigersinn, in
+   * Bogenmaß (0 = Norden zeigt gerade nach oben). Wird genutzt, um den
+   * Nordpfeil passend zur Rotation des Druckbereich-Rechtecks zu drehen.
+   * Unset/0, wenn keine Rotation vorliegt.
+   */
+  northArrowRotation?: number;
   /** The orientation of the PDF. */
   orientation: OrientationOptions.LANDSCAPE | OrientationOptions.PORTRAIT;
   /** The format of the PDF. */
@@ -199,6 +211,12 @@ export default class PDFCreator {
   /** Scale of the map */
   scale?: string;
 
+  /** Numerischer Maßstabsnenner für den grafischen Maßstabsbalken. */
+  scaleDenominator?: number;
+
+  /** Richtung von Norden nach oben auf der Seite (im Uhrzeigersinn, Bogenmaß) für den Nordpfeil. */
+  northArrowRotation?: number;
+
   /** The current layer for which a legend page is being added */
   currentLayerTitle?: string;
 
@@ -304,6 +322,8 @@ export default class PDFCreator {
     if (pdfCreatorOptions.scale) {
       pdfCreatorOptions.mapInfo?.text.push(pdfCreatorOptions.scale);
     }
+    this.scaleDenominator = pdfCreatorOptions.scaleDenominator;
+    this.northArrowRotation = pdfCreatorOptions.northArrowRotation;
 
     // Breite der Info-Spalten hängt nur von orientation/formatting ab, nicht
     // vom Inhalt — kann also vor der Höhenberechnung feststehen.
@@ -821,6 +841,267 @@ export default class PDFCreator {
   }
 
   /**
+   * Wählt aus der kartografisch üblichen 1/2/5×10^n-Folge (1, 2, 5, 10, 20,
+   * 50, 100, ...) den größten Wert, der `maxMeters` nicht überschreitet —
+   * damit der Maßstabsbalken eine "runde" Distanz zeigt statt eines
+   * krummen Wertes.
+   * @param maxMeters Obergrenze in Metern (z.B. abgeleitet aus der
+   * gewünschten Balkenbreite und dem Maßstab).
+   */
+  private _pickNiceScaleBarDistance(maxMeters: number): number {
+    if (!Number.isFinite(maxMeters) || maxMeters <= 0) {
+      return 100;
+    }
+    const magnitude = 10 ** Math.floor(Math.log10(maxMeters));
+    let best = magnitude;
+    [1, 2, 5, 10].forEach((multiplier) => {
+      const candidate = magnitude * multiplier;
+      if (candidate <= maxMeters) {
+        best = candidate;
+      }
+    });
+    return best;
+  }
+
+  /**
+   * Zeichnet einen grafischen Maßstabsbalken (4 alternierend schwarz/weiß
+   * gefüllte Segmente) unten links im Kartenbereich, mit weißem
+   * Hintergrund für Lesbarkeit auf beliebigem Kartenuntergrund. Setzt
+   * `scaleDenominator` voraus (siehe {@link PDFCreatorOptions}) — ohne
+   * diesen Wert wird nichts gezeichnet.
+   */
+  private _drawScaleBar(): void {
+    if (!this.imgPlacement || !this.scaleDenominator) {
+      return;
+    }
+    const metersPerInch = this.scaleDenominator * 0.0254;
+    const margin = 0.15;
+    const maxBarWidthInches = Math.min(this.imgPlacement.size.width * 0.3, 2);
+    const niceDistance = this._pickNiceScaleBarDistance(
+      maxBarWidthInches * metersPerInch,
+    );
+    const barWidth = niceDistance / metersPerInch;
+    const barHeight = 0.06;
+    const segments = 4;
+    const segmentWidth = barWidth / segments;
+    const labelHeight = 0.14;
+
+    const x0 = this.imgPlacement.coords.x + margin;
+    const y0 =
+      this.imgPlacement.coords.y +
+      this.imgPlacement.size.height -
+      margin -
+      barHeight -
+      labelHeight;
+
+    this.pdfDoc.setFillColor(255, 255, 255);
+    this.pdfDoc.rect(
+      x0 - 0.05,
+      y0 - 0.05,
+      barWidth + 0.1,
+      barHeight + labelHeight + 0.1,
+      'F',
+    );
+
+    for (let i = 0; i < segments; i += 1) {
+      const segX = x0 + i * segmentWidth;
+      const fillValue = i % 2 === 0 ? 0 : 255;
+      this.pdfDoc.setFillColor(fillValue, fillValue, fillValue);
+      this.pdfDoc.setDrawColor(0, 0, 0);
+      this.pdfDoc.rect(segX, y0, segmentWidth, barHeight, 'FD');
+    }
+
+    const unit = niceDistance >= 1000 ? 'km' : 'm';
+    const displayValue =
+      niceDistance >= 1000 ? niceDistance / 1000 : niceDistance;
+
+    this._setTextStyle('info');
+    this.pdfDoc.setFontSize(7);
+    this.pdfDoc.setTextColor(0, 0, 0);
+    this.pdfDoc.text('0', x0, y0 + barHeight + 0.04, { baseline: 'top' });
+    this.pdfDoc.text(
+      `${displayValue} ${unit}`,
+      x0 + barWidth,
+      y0 + barHeight + 0.04,
+      { baseline: 'top', align: 'right' },
+    );
+  }
+
+  /**
+ * Zeichnet einen schlanken, zweifarbigen Nordpfeil.
+ *
+ * Die linke Hälfte ist schwarz, die rechte Hälfte weiß.
+ * Beide Flächen treffen sich an der gemeinsamen Nordspitze.
+ * Der Nordpfeil wird entsprechend northArrowRotation gedreht.
+ */
+private _drawNorthArrow(): void {
+  if (!this.imgPlacement) {
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // Größe und Position
+  // ---------------------------------------------------------
+
+  const height = 0.58;
+  const width = 0.30;
+  const margin = 0.15;
+
+  // Rotation in Radiant
+  const rotation = this.northArrowRotation ?? 0;
+
+  // Mittelpunkt des Nordpfeils
+  const center = {
+    x:
+      this.imgPlacement.coords.x +
+      this.imgPlacement.size.width -
+      margin -
+      width / 2,
+
+    y:
+      this.imgPlacement.coords.y +
+      margin +
+      height / 2,
+  };
+
+  // ---------------------------------------------------------
+  // Rotation
+  // ---------------------------------------------------------
+
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
+  /**
+   * Dreht einen relativ zum Mittelpunkt definierten Punkt.
+   */
+  const rotate = (
+    dx: number,
+    dy: number,
+  ): [number, number] => [
+    center.x + dx * cos - dy * sin,
+    center.y + dx * sin + dy * cos,
+  ];
+
+  /**
+   * Zeichnet ein geschlossenes Polygon.
+   *
+   * jsPDF.lines() benötigt relative Liniensegmente.
+   */
+  const drawPolygon = (
+    points: [number, number][],
+    style: 'F' | 'FD',
+  ): void => {
+    const start = points[0];
+
+    const segments: [number, number][] = [];
+
+    // Linien zwischen den aufeinanderfolgenden Punkten
+    for (let i = 1; i < points.length; i += 1) {
+      segments.push([
+        points[i][0] - points[i - 1][0],
+        points[i][1] - points[i - 1][1],
+      ]);
+    }
+
+    // Polygon zurück zum Ausgangspunkt schließen
+    segments.push([
+      start[0] - points[points.length - 1][0],
+      start[1] - points[points.length - 1][1],
+    ]);
+
+    this.pdfDoc.lines(
+      segments,
+      start[0],
+      start[1],
+      [1, 1],
+      style,
+      true,
+    );
+  };
+
+  // ---------------------------------------------------------
+  // Geometrie des Nordpfeils
+  // ---------------------------------------------------------
+
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  /*
+   * Unrotierte Grundform:
+   *
+   *                 ▲
+   *                /|\
+   *               /█|░\
+   *              /██|░░\
+   *             /███|░░░\
+   *            /████|░░░░\
+   *           ◄─────┴─────►
+   *
+   * █ = schwarze linke Hälfte
+   * ░ = weiße rechte Hälfte
+   */
+
+  // Gemeinsame Nordspitze
+  const tip = rotate(0, -halfHeight);
+
+  // Linker äußerer Fußpunkt
+  const leftBottom = rotate(-halfWidth, halfHeight);
+
+  // Mittelpunkt der unteren Kante
+  const bottomCenter = rotate(0, halfHeight * 0.65);
+
+  // Rechter äußerer Fußpunkt
+  const rightBottom = rotate(halfWidth, halfHeight);
+
+  // ---------------------------------------------------------
+  // Linke schwarze Hälfte
+  // ---------------------------------------------------------
+
+  this.pdfDoc.setFillColor(20, 20, 20);
+  this.pdfDoc.setDrawColor(20, 20, 20);
+  this.pdfDoc.setLineWidth(0.006);
+
+  drawPolygon(
+    [
+      tip,
+      bottomCenter,
+      leftBottom,
+    ],
+    'FD',
+  );
+
+  // ---------------------------------------------------------
+  // Rechte weiße Hälfte
+  // ---------------------------------------------------------
+
+  this.pdfDoc.setFillColor(255, 255, 255);
+  this.pdfDoc.setDrawColor(20, 20, 20);
+  this.pdfDoc.setLineWidth(0.006);
+
+  drawPolygon(
+    [
+      tip,
+      rightBottom,
+      bottomCenter,
+    ],
+    'FD',
+  );
+
+  // ---------------------------------------------------------
+  // Feine Trennlinie zwischen den beiden Flächen
+  // ---------------------------------------------------------
+
+  this.pdfDoc.setDrawColor(20, 20, 20);
+  this.pdfDoc.setLineWidth(0.004);
+
+  this.pdfDoc.line(
+    tip[0],
+    tip[1],
+    bottomCenter[0],
+    bottomCenter[1],
+  );
+}
+  /**
    * Adds a page to the PDF document, on which is added the title of the layer
    * whose legend entries are being added. Sets the text style to `info`.
    * @returns The title height.
@@ -873,6 +1154,9 @@ export default class PDFCreator {
       this.imgPlacement!.size.width,
       this.imgPlacement!.size.height,
     );
+
+    this._drawScaleBar();
+    this._drawNorthArrow();
 
     if (this.title) {
       this._setTextStyle('title');
