@@ -217,6 +217,19 @@ export default class PDFCreator {
   /** Richtung von Norden nach oben auf der Seite (im Uhrzeigersinn, Bogenmaß) für den Nordpfeil. */
   northArrowRotation?: number;
 
+  /**
+   * Höhe (in Zoll) der Grafikzeile mit Maßstabsbalken und Nordpfeil
+   * innerhalb der Karteninformation-Box. Wird sowohl bei der
+   * Platzierungsberechnung ({@link _calcMapInfoPlacement}) als auch beim
+   * eigentlichen Zeichnen ({@link _drawScaleBar}, {@link _drawNorthArrow})
+   * verwendet, damit reservierter Platz und tatsächliche Zeichnung
+   * übereinstimmen.
+   */
+  private readonly mapInfoGraphicsHeight = 0.32;
+
+  /** Abstand (in Zoll) zwischen dem Textblock der Karteninformation und der Grafikzeile. */
+  private readonly mapInfoGraphicsGap = 0.09;
+
   /** The current layer for which a legend page is being added */
   currentLayerTitle?: string;
 
@@ -640,6 +653,13 @@ export default class PDFCreator {
       this.orientation === OrientationOptions.PORTRAIT
         ? this.formatting.elementMargin
         : this.formatting.elementMargin / 2;
+
+    // Zusätzlicher Platz unterhalb des Textes für die Grafikzeile
+    // (Maßstabsbalken + Nordpfeil), die jetzt Teil der Karteninformation-Box
+    // ist, statt auf der Karte zu liegen.
+    const graphicsReserved =
+      this.mapInfoGraphicsHeight + this.mapInfoGraphicsGap;
+
     return {
       coords: {
         x: this.contact
@@ -650,13 +670,14 @@ export default class PDFCreator {
         y:
           this.pdfSize.height -
           this.formatting.pageMargins[2] -
-          this._calcTotalLineHeight(lineCount),
+          this._calcTotalLineHeight(lineCount) -
+          graphicsReserved,
       },
       size: {
         width: this._calcElementWidth(
           this.formatting[`info.widthPortion.${this.orientation}`],
         ),
-        height: this._calcTotalLineHeight(lineCount),
+        height: this._calcTotalLineHeight(lineCount) + graphicsReserved,
       },
     };
   }
@@ -864,67 +885,155 @@ export default class PDFCreator {
   }
 
   /**
-   * Zeichnet einen grafischen Maßstabsbalken (4 alternierend schwarz/weiß
-   * gefüllte Segmente) unten links im Kartenbereich, mit weißem
-   * Hintergrund für Lesbarkeit auf beliebigem Kartenuntergrund. Setzt
-   * `scaleDenominator` voraus (siehe {@link PDFCreatorOptions}) — ohne
-   * diesen Wert wird nichts gezeichnet.
+   * Formatiert einen Distanzwert für die Maßstabsbalken-Beschriftung in der
+   * übergebenen Zieleinheit (z.B. Rohwert in Metern -> "1.5" bei unit="km").
+   * @param value Distanz in Metern.
+   * @param unit Zieleinheit der Beschriftung ('m' oder 'km').
+   */
+  private _formatScaleDistance(value: number, unit: 'm' | 'km'): string {
+    const displayValue = unit === 'km' ? value / 1000 : value;
+    const rounded =
+      unit === 'km'
+        ? Math.round(displayValue * 10) / 10
+        : Math.round(displayValue);
+    return `${rounded}`;
+  }
+
+  /**
+   * Zeichnet einen klassischen kartografischen Maßstabsbalken (alternierend
+   * schwarz/weiß gefüllte Segmente mit sauberem Rahmen, Teilstrichen und
+   * Beschriftung in einheitlicher Einheit) als Teil der Karteninformation-Box
+   * (links neben dem Nordpfeil, siehe {@link _drawNorthArrow}) — ohne
+   * eigenen Hintergrund, da die Box bereits auf weißem Seitengrund liegt.
+   * Setzt `scaleDenominator` voraus (siehe {@link PDFCreatorOptions}) —
+   * ohne diesen Wert und ohne Karteninformation-Box wird nichts gezeichnet.
    */
   private _drawScaleBar(): void {
-    if (!this.imgPlacement || !this.scaleDenominator) {
+    if (!this.mapInfoPlacement || !this.scaleDenominator) {
       return;
     }
+
     const metersPerInch = this.scaleDenominator * 0.0254;
-    const margin = 0.15;
-    const maxBarWidthInches = Math.min(this.imgPlacement.size.width * 0.3, 2);
-    const niceDistance = this._pickNiceScaleBarDistance(
-      maxBarWidthInches * metersPerInch,
-    );
-    const barWidth = niceDistance / metersPerInch;
-    const barHeight = 0.06;
+
+    // Grafikzeile der Karteninformation-Box: Maßstabsbalken links,
+    // Nordpfeil rechts (siehe _drawNorthArrow) — Reservierung erfolgt in
+    // _calcMapInfoPlacement über dieselben Konstanten.
+    const rowY =
+      this.pdfSize.height -
+      this.formatting.pageMargins[2] -
+      this.mapInfoGraphicsHeight;
+    const northArrowWidth = 0.17;
+    const northArrowGap = 0.16;
+
+    // Platz für die Einheit-Beschriftung nach dem Balkenende einkalkulieren.
+    const unitLabelReserve = 0.22;
+
+    const maxWidthInches =
+      this.mapInfoPlacement.size.width -
+      northArrowWidth -
+      northArrowGap -
+      unitLabelReserve;
+
+    const targetMeters = Math.max(maxWidthInches, 0.1) * metersPerInch;
+
+    const scaleDistance = this._pickNiceScaleBarDistance(targetMeters);
+
+    const barWidth = scaleDistance / metersPerInch;
+
+    // Einheit einmal für den gesamten Balken bestimmen, damit alle
+    // Teilstrich-Beschriftungen konsistent in derselben Einheit erscheinen.
+    const unit: 'm' | 'km' = scaleDistance >= 1000 ? 'km' : 'm';
+
     const segments = 4;
     const segmentWidth = barWidth / segments;
-    const labelHeight = 0.14;
 
-    const x0 = this.imgPlacement.coords.x + margin;
-    const y0 =
-      this.imgPlacement.coords.y +
-      this.imgPlacement.size.height -
-      margin -
-      barHeight -
-      labelHeight;
+    const barHeight = 0.07;
+    const tickHeight = 0.03;
+    const labelGap = 0.02;
+    const lineWidth = 0.006;
+    const barColor: [number, number, number] = [20, 20, 20];
 
-    this.pdfDoc.setFillColor(255, 255, 255);
-    this.pdfDoc.rect(
-      x0 - 0.05,
-      y0 - 0.05,
-      barWidth + 0.1,
-      barHeight + labelHeight + 0.1,
-      'F',
-    );
+    const x = this.mapInfoPlacement.coords.x;
+    const y = rowY;
 
-    for (let i = 0; i < segments; i += 1) {
-      const segX = x0 + i * segmentWidth;
-      const fillValue = i % 2 === 0 ? 0 : 255;
-      this.pdfDoc.setFillColor(fillValue, fillValue, fillValue);
-      this.pdfDoc.setDrawColor(0, 0, 0);
-      this.pdfDoc.rect(segX, y0, segmentWidth, barHeight, 'FD');
+    /*
+     * Balkensegmente (nur Flächenfüllung, kein Einzelrand je Segment –
+     * der Rahmen wird separat als ein sauberer, einheitlicher Umriss
+     * gezeichnet, damit an den Segmentgrenzen keine doppelten/unsauberen
+     * Linien entstehen).
+     */
+    for (let i = 0; i < segments; i++) {
+      const sx = x + i * segmentWidth;
+      const isDark = i % 2 === 0;
+
+      this.pdfDoc.setFillColor(
+        isDark ? barColor[0] : 255,
+        isDark ? barColor[1] : 255,
+        isDark ? barColor[2] : 255,
+      );
+
+      this.pdfDoc.rect(sx, y, segmentWidth, barHeight, 'F');
     }
 
-    const unit = niceDistance >= 1000 ? 'km' : 'm';
-    const displayValue =
-      niceDistance >= 1000 ? niceDistance / 1000 : niceDistance;
+    /*
+     * Einheitlicher Außenrahmen und Trennlinien zwischen den Segmenten
+     */
+    this.pdfDoc.setDrawColor(...barColor);
+    this.pdfDoc.setLineWidth(lineWidth);
 
+    this.pdfDoc.rect(x, y, barWidth, barHeight, 'D');
+
+    for (let i = 1; i < segments; i++) {
+      const sx = x + i * segmentWidth;
+      this.pdfDoc.line(sx, y, sx, y + barHeight);
+    }
+
+    /*
+     * Teilstriche unterhalb des Balkens
+     */
+    for (let i = 0; i <= segments; i++) {
+      const sx = x + i * segmentWidth;
+      this.pdfDoc.line(sx, y + barHeight, sx, y + barHeight + tickHeight);
+    }
+
+    /*
+     * Beschriftung der Teilstriche (einheitliche Einheit für alle Werte)
+     */
     this._setTextStyle('info');
-    this.pdfDoc.setFontSize(7);
-    this.pdfDoc.setTextColor(0, 0, 0);
-    this.pdfDoc.text('0', x0, y0 + barHeight + 0.04, { baseline: 'top' });
+
+    this.pdfDoc.setFontSize(6);
+    this.pdfDoc.setTextColor(...barColor);
+
+    for (let i = 0; i <= segments; i++) {
+      const value = (scaleDistance / segments) * i;
+
+      const label = this._formatScaleDistance(value, unit);
+
+      this.pdfDoc.text(
+        label,
+        x + i * segmentWidth,
+        y + barHeight + tickHeight + labelGap,
+        {
+          align: i === 0 ? 'left' : i === segments ? 'right' : 'center',
+          baseline: 'top',
+        },
+      );
+    }
+
+    /*
+     * Einheit rechts neben dem Balkenende
+     */
     this.pdfDoc.text(
-      `${displayValue} ${unit}`,
-      x0 + barWidth,
-      y0 + barHeight + 0.04,
-      { baseline: 'top', align: 'right' },
+      unit,
+      x + barWidth + 0.05,
+      y + barHeight + tickHeight + labelGap,
+      {
+        baseline: 'top',
+      },
     );
+
+    // Zeichenzustand für nachfolgende Elemente zurücksetzen
+    this.pdfDoc.setLineWidth(0.006);
   }
 
   /**
@@ -933,9 +1042,12 @@ export default class PDFCreator {
  * Die linke Hälfte ist schwarz, die rechte Hälfte weiß.
  * Beide Flächen treffen sich an der gemeinsamen Nordspitze.
  * Der Nordpfeil wird entsprechend northArrowRotation gedreht.
+ *
+ * Wird rechtsbündig in der Grafikzeile der Karteninformation-Box
+ * platziert, neben dem Maßstabsbalken (siehe {@link _drawScaleBar}).
  */
 private _drawNorthArrow(): void {
-  if (!this.imgPlacement) {
+  if (!this.mapInfoPlacement) {
     return;
   }
 
@@ -943,33 +1055,38 @@ private _drawNorthArrow(): void {
   // Größe und Position
   // ---------------------------------------------------------
 
-  const height = 0.58;
-  const width = 0.30;
-  const margin = 0.15;
+  const height = this.mapInfoGraphicsHeight;
+  const width = 0.17;
 
   // Rotation in Radiant
   const rotation = this.northArrowRotation ?? 0;
 
-  // Mittelpunkt des Nordpfeils
+  // Mittelpunkt des Nordpfeils: rechtsbündig in der Grafikzeile,
+  // dieselbe Zeile wie der Maßstabsbalken.
+  const rowY =
+    this.pdfSize.height -
+    this.formatting.pageMargins[2] -
+    this.mapInfoGraphicsHeight;
+
   const center = {
     x:
-      this.imgPlacement.coords.x +
-      this.imgPlacement.size.width -
-      margin -
+      this.mapInfoPlacement.coords.x +
+      this.mapInfoPlacement.size.width -
       width / 2,
 
-    y:
-      this.imgPlacement.coords.y +
-      margin +
-      height / 2,
+    y: rowY + height / 2,
   };
 
   // ---------------------------------------------------------
   // Rotation
   // ---------------------------------------------------------
 
+  // Vorzeichen von sin invertiert: mit der Standard-Rotationsmatrix (unten)
+  // in diesem y-nach-unten-Koordinatensystem vertauschten sich sonst Ost
+  // und West (Norden/Süden — auf der senkrechten Achse — blieben davon
+  // unberührt, weshalb der Fehler dort nicht auffiel).
   const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
+  const sin = -Math.sin(rotation);
 
   /**
    * Dreht einen relativ zum Mittelpunkt definierten Punkt.
@@ -1155,9 +1272,6 @@ private _drawNorthArrow(): void {
       this.imgPlacement!.size.height,
     );
 
-    this._drawScaleBar();
-    this._drawNorthArrow();
-
     if (this.title) {
       this._setTextStyle('title');
       this.pdfDoc.text(
@@ -1259,6 +1373,11 @@ private _drawNorthArrow(): void {
         this.mapInfoPlacement!.coords.y,
         { baseline: 'hanging' },
       );
+
+      // Maßstabsbalken und Nordpfeil als Grafikzeile unterhalb des Textes
+      // der Karteninformation-Box (siehe _calcMapInfoPlacement).
+      this._drawScaleBar();
+      this._drawNorthArrow();
     }
 
     if (this.description) {

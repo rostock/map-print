@@ -189,6 +189,7 @@
     VcsSelect,
     VcsTextArea,
     VcsTextField,
+    getColorByKey, 
   } from '@vcmap/ui';
   import { OpenlayersMap, VectorLayer } from '@vcmap/core';
   import {
@@ -556,19 +557,25 @@
 
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
+        console.log("baue Styling");
+        console.log(theme.current.value.colors);
+        const primary = getColorByKey('primary');
+        const secondary = getColorByKey('secondary');
         if (feature.get(printAreaRoleKey) === printAreaHandleRole) {
           return new Style({
             image: new CircleStyle({
               radius: 7,
-              fill: new Fill({ color: theme.current.value.colors.secondary }),
-              stroke: new Stroke({ color: '#FFFFFF', width: 2 }),
+              fill: new Fill({ color: secondary }),
+              stroke: new Stroke({ color: theme.current.value.colors.background, width: 2 }),
             }),
           });
         }
         return new Style({
+          fill: new Fill({ color: theme.current.value.colors.background }),
           stroke: new Stroke({
-            color: theme.current.value.colors.primary,
+            color: primary,
             width: 2,
+            
           }),
         });
       }
@@ -748,14 +755,16 @@
         if (!createPrintAreaFeatures(activeMap)) {
           return;
         }
-
+        console.log("dsdasasdsad");
         printAreaLayer = new VectorLayer({
           name: printAreaLayerName,
           projection: {
             epsg: activeMap.olMap.getView().getProjection().getCode(),
-          },
-          style: printAreaStyleFunction,
+          }
         });
+        printAreaLayer.setStyle(printAreaStyleFunction);
+        console.log("deine mudder");
+
         printAreaLayer.addFeatures([rectangleFeature!, handleFeature!]);
         app.layers.add(printAreaLayer);
         printAreaLayer.activate().catch((error: unknown) => {
@@ -763,7 +772,9 @@
             `Activating print-area layer failed: ${error as string}`,
           );
         });
-
+        setTimeout(() => {
+  console.log(printAreaLayer);
+}, 1000);
         printAreaMap = activeMap;
         printAreaInteraction = createPrintAreaInteraction();
         activeMap.olMap.addInteraction(printAreaInteraction);
@@ -959,9 +970,18 @@
         const originalRotation = view.getRotation();
 
         const rectState = printAreaState;
+
         // Resolution so wählen, dass das Rechteck in beiden Dimensionen
         // vollständig sichtbar ist (kein Beschnitt), unabhängig vom
-        // Seitenverhältnis des Karten-Elements.
+        // Seitenverhältnis des Karten-Elements. Bewusst die knappe
+        // (scharfe) Berechnung, keine pauschale Sicherheitsmarge: Eine evtl.
+        // verbleibende Rest-Rotation (falls view.setRotation() die
+        // Rechteck-Rotation nicht exakt aufhebt) wird NICHT hier
+        // vorsorglich einkalkuliert, sondern nach dem Rendern tatsächlich
+        // GEMESSEN und nur bei Bedarf gezielt nachkorrigiert (siehe
+        // createPdf, direkt nach computePrintAreaScreenRegion) — damit
+        // bleibt die Auflösung im (üblichen) Normalfall unangetastet und
+        // scharf.
         const resolution = Math.max(
           rectState.width / domSize.width,
           rectState.height / domSize.height,
@@ -1010,6 +1030,45 @@
           if (printAreaAlignment) {
             await waitForRenderComplete(activeMap);
             printAreaScreenRegion = computePrintAreaScreenRegion(activeMap);
+
+            // Falls view.setRotation() die Rechteck-Rotation nicht exakt
+            // aufhebt, kann die tatsächliche (jetzt gemessene) achsen-
+            // parallele Bounding-Box des Rechtecks größer als mapSize sein
+            // — seine Ecken lägen dann außerhalb des gerenderten Bereichs,
+            // und cropRotatedCanvasToPrintArea würde dort leeren/fehlenden
+            // Inhalt in den Ausschnitt ziehen (wirkt dann gestaucht/
+            // verzerrt). Deshalb hier gezielt prüfen und nur bei
+            // tatsächlichem Bedarf nachzoomen — nicht pauschal, damit die
+            // Auflösung im Normalfall (keine oder vernachlässigbare
+            // Rest-Rotation) scharf bleibt.
+            if (printAreaScreenRegion) {
+              const { widthPixel, heightPixel, rotation } =
+                printAreaScreenRegion;
+              const bboxWidth =
+                widthPixel * Math.abs(Math.cos(rotation)) +
+                heightPixel * Math.abs(Math.sin(rotation));
+              const bboxHeight =
+                widthPixel * Math.abs(Math.sin(rotation)) +
+                heightPixel * Math.abs(Math.cos(rotation));
+
+              const overflowScale = Math.max(
+                bboxWidth / mapSize.width,
+                bboxHeight / mapSize.height,
+              );
+
+              // Kleine Toleranz gegen Float-/Messungenauigkeiten, damit im
+              // Normalfall kein unnötiger zweiter Render-Durchlauf anfällt.
+              if (overflowScale > 1.001) {
+                const view = activeMap.olMap.getView();
+                const currentResolution = view.getResolution() ?? 1;
+                // 1% Sicherheitszuschlag obendrauf, um Rundungsfehler beim
+                // erneuten Messen sicher abzudecken.
+                view.setResolution(currentResolution * overflowScale * 1.01);
+                await waitForRenderComplete(activeMap);
+                printAreaScreenRegion =
+                  computePrintAreaScreenRegion(activeMap);
+              }
+            }
           }
         }
 
