@@ -2,7 +2,7 @@
   "properties": {},
   "name": "Geoport.HRO",
   "createdAt": "2026-07-13T12:58:25.201Z",
-  "updatedAt": "2026-08-07T06:51:31.822Z",
+  "updatedAt": "2026-07-22T11:42:49.150Z",
   "createdBy": "R62ad002",
   "updatedBy": "R62ad002",
   "_id": "public",
@@ -32,17 +32,7 @@
       },
       "catalogues": {
         "itemsPerPage": 14,
-        "presets": [
-          {
-            "url": "https://geo.sv.rostock.de/metadata/collections/service/items",
-            "type": "ogcApiRecords",
-            "title": "Lotsenbuch",
-            "subtitle": "",
-            "logo": "",
-            "description": "",
-            "fetchFacets": false
-          }
-        ]
+        "presets": []
       },
       "name": "@vcmap/dynamic-layer",
       "entry": "plugins/@vcmap/dynamic-layer/index.js"
@@ -90,75 +80,11 @@
       "name": "@vcmap/print",
       "entry": "plugins/@vcmap/print/index.js",
       "contactDetails": {
-        "department": "Hanse- und Universitätstadt Rostock",
-        "name": "Kataster-, Vermessungs- und Liegenschaftsamt",
+        "department": "Herausgeber",
+        "name": "Kataster-, LVermessungs- und Liegenschaftsamt Rostock",
         "streetAddress": "An der Jägerbäk 3",
         "zipAndCity": "18069 Rostock",
-        "country": "Deutschland",
-        "mail": "geodienste@rostock.de",
-        "phone": "",
-        "fax": ""
-      },
-      "imageSizeList": [
-        {
-          "key": "A5",
-          "format": "A5",
-          "portrait": {
-            "width": 5.13,
-            "height": 5.6
-          },
-          "landscape": {
-            "width": 7.57,
-            "height": 3.3
-          }
-        },
-        {
-          "key": "A4",
-          "format": "A4",
-          "portrait": {
-            "width": 7.27,
-            "height": 8.29
-          },
-          "landscape": {
-            "width": 10.69,
-            "height": 5.1
-          }
-        },
-        {
-          "key": "A3",
-          "format": "A3",
-          "portrait": {
-            "width": 10.29,
-            "height": 12.64
-          },
-          "landscape": {
-            "width": 15.14,
-            "height": 8.5
-          }
-        },
-        {
-          "key": "A2",
-          "format": "A2",
-          "portrait": {
-            "width": 14.74,
-            "height": 18.89
-          },
-          "landscape": {
-            "width": 21.59,
-            "height": 12.85
-          }
-        }
-      ],
-      "imageSizeDefault": "A4",
-      "printLinkToMap": true,
-      "printQR": true,
-      "printObliqueName": false,
-      "printFeatureInfo": false,
-      "charLimit": 500,
-      "font": {
-        "name": "fira-sans",
-        "regular": "plugin-assets/fonts/fira-sans.regular.ttf",
-        "bold": "plugin-assets/fonts/fira-sans.bold.ttf"
+        "mail": "geodienste@rostock.de"
       }
     },
     {
@@ -182,6 +108,23 @@
     "proj4": "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
   },
   "uiConfig": [
+    {
+      "name": "vuetifyTheme",
+      "value": {
+        "light": {
+          "colors": {
+            "base": "#9E9E9E",
+            "secondary": "red"
+          }
+        },
+        "dark": {
+          "colors": {
+            "base": "#9E9E9E",
+            "secondary": "red"
+          }
+        }
+      }
+    },
     {
       "name": "primaryColor",
       "value": "#1879BF",
@@ -3528,12 +3471,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -3711,12 +3661,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -3817,12 +3774,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          10.460201,
+          53.084444,
+          14.414519,
+          54.693378
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -3898,12 +3862,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4052,12 +4023,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4157,12 +4135,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4522,12 +4507,19 @@
       "type": "WMSLayer",
       "name": "flaechennutzungsplan",
       "url": "https://geo.sv.rostock.de/geodienste/flaechennutzungsplaene/wms",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4604,12 +4596,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          10.460201,
+          53.084444,
+          14.414519,
+          54.693378
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4696,12 +4695,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4718,35 +4724,7 @@
         "hro.sanierungsgebiete.sanierungsgebiete"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO",
-        "title": "Sanierungsgebiete der Hanse- und Universitätsstadt Rostock",
-        "capabilities": {
-          "layers": [
-            {
-              "name": "hro.sanierungsgebiete.sanierungsgebiete",
-              "title": "Sanierungsgebiete der Hanse- und Universitätsstadt Rostock",
-              "extent": [
-                11.993611,
-                12.304498,
-                54.048608,
-                54.246594
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/sanierungsgebiete/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.sanierungsgebiete.sanierungsgebiete&format=image/png&STYLE=default",
-                      "width": 138,
-                      "height": 69
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+        "featureInfo": "FeatureInfoHRO"
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -4777,12 +4755,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4930,12 +4915,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -4954,81 +4946,7 @@
         "hro.satzungen.oertliche_bauvorschriften.vorgartensatzung_thuenenviertel"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO",
-        "title": "Satzungen der Hanse- und Universitätsstadt Rostock",
-        "capabilities": {
-          "layers": [
-            {
-              "name": "hro.satzungen.oertliche_bauvorschriften.gestaltungssatzung_reutershagen_eins",
-              "title": "Gestaltungssatzung Reutershagen I der Hanse- und Universitätsstadt Rostock",
-              "extent": [
-                11.993611,
-                12.304498,
-                54.048608,
-                54.246594
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/satzungen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.satzungen.oertliche_bauvorschriften.gestaltungssatzung_reutershagen_eins&format=image/png&STYLE=default",
-                      "width": 131,
-                      "height": 32
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "hro.satzungen.oertliche_bauvorschriften.vorgartensatzung_ktv",
-              "title": "Vorgartensatzung Kröpeliner-Tor-Vorstadt der Hanse- und Universitätsstadt Rostock",
-              "extent": [
-                11.993611,
-                12.304498,
-                54.048608,
-                54.246594
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/satzungen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.satzungen.oertliche_bauvorschriften.vorgartensatzung_ktv&format=image/png&STYLE=default",
-                      "width": 151,
-                      "height": 143
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "hro.satzungen.oertliche_bauvorschriften.vorgartensatzung_thuenenviertel",
-              "title": "Vorgartensatzung Thünenviertel der Hanse- und Universitätsstadt Rostock",
-              "extent": [
-                11.993611,
-                12.304498,
-                54.048608,
-                54.246594
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/satzungen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.satzungen.oertliche_bauvorschriften.vorgartensatzung_thuenenviertel&format=image/png&STYLE=default",
-                      "width": 131,
-                      "height": 32
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+        "featureInfo": "FeatureInfoHRO"
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -5060,12 +4978,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5142,12 +5067,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5224,12 +5156,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5306,12 +5245,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5388,12 +5334,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5470,12 +5423,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5583,7 +5543,81 @@
         "hro.kinderbetreuungseinrichtungen.horte"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Kinderbetreuungseinrichtungen in der Hanse- und Universitätsstadt Rostock",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.kinderbetreuungseinrichtungen.kinderkrippen",
+              "title": "Kinderkrippen in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/kinderbetreuungseinrichtungen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.kinderbetreuungseinrichtungen.kinderkrippen&format=image/png&STYLE=default",
+                      "width": 114,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.kinderbetreuungseinrichtungen.kindergaerten",
+              "title": "Kindergärten in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/kinderbetreuungseinrichtungen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.kinderbetreuungseinrichtungen.kindergaerten&format=image/png&STYLE=default",
+                      "width": 115,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.kinderbetreuungseinrichtungen.horte",
+              "title": "Horte in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/kinderbetreuungseinrichtungen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.kinderbetreuungseinrichtungen.horte&format=image/png&STYLE=default",
+                      "width": 71,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -5615,12 +5649,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5697,12 +5738,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -5923,12 +5971,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6125,12 +6180,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6206,12 +6268,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6312,12 +6381,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6392,12 +6468,19 @@
       "infoUrl": "datenwerft:https://geo.sv.rostock.de/datenwerft/api/gdihrometadata/get-by-uuid/a0827644-0392-4877-b5a2-b8db4387dfd1",
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6503,7 +6586,35 @@
         "hro.baeckereien.baeckereien"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Bäckereien in der Hanse- und Universitätsstadt Rostock (HRO)",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.baeckereien.baeckereien",
+              "title": "Bäckereien in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/baeckereien/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.baeckereien.baeckereien&format=image/png&STYLE=default",
+                      "width": 92,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -6535,12 +6646,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6617,12 +6735,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6747,12 +6872,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6829,12 +6961,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -6911,12 +7050,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7065,12 +7211,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7147,12 +7300,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7229,12 +7389,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7311,12 +7478,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7393,12 +7567,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7475,12 +7656,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7557,12 +7745,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7663,12 +7858,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7913,12 +8115,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -7990,12 +8199,19 @@
       "type": "WMSLayer",
       "name": "fernwaermesatzung",
       "url": "https://geo.sv.rostock.de/geodienste/satzungen/wms",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8072,12 +8288,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8155,12 +8378,19 @@
       "name": "solarpotential",
       "url": "https://geo.sv.rostock.de/geodienste/solarpotential/wms",
       "infoUrl": "datenwerft:https://geo.sv.rostock.de/datenwerft/api/gdihrometadata/get-by-uuid/9289846e-a809-4c49-b9e1-13bb63771f9d",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8308,12 +8538,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8370,12 +8607,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8522,12 +8766,19 @@
       "infoUrl": "datenwerft:https://geo.sv.rostock.de/datenwerft/api/gdihrometadata/get-by-uuid/e4b3a634-264f-4af3-ac8e-2322a463a4c2",
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.488307,
-        12.837214,
-        53.545797,
-        54.285979
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8603,12 +8854,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8742,7 +9000,150 @@
         "hro.stadtbodenkarte_2005.schutzwuerdigkeit"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.stadtbodenkarte_2005.bodentypen",
+              "title": "Bodentypen der Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/stadtbodenkarte_2005/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtbodenkarte_2005.bodentypen&format=image/png&STYLE=default",
+                      "width": 458,
+                      "height": 1771
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.stadtbodenkarte_2005.bodenklassen",
+              "title": "Bodenklassen der Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/stadtbodenkarte_2005/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtbodenkarte_2005.bodenklassen&format=image/png&STYLE=default",
+                      "width": 212,
+                      "height": 328
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.stadtbodenkarte_2005.moorkartierung",
+              "title": "Moorkartierung der Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/stadtbodenkarte_2005/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtbodenkarte_2005.moorkartierung&format=image/png&STYLE=default",
+                      "width": 234,
+                      "height": 180
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.stadtbodenkarte_2005.schutzzone_moor",
+              "title": "Schutzzone Moor der Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/stadtbodenkarte_2005/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtbodenkarte_2005.schutzzone_moor&format=image/png&STYLE=default",
+                      "width": 136,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.stadtbodenkarte_2005.geschuetzte_boeden",
+              "title": "Geschützte Böden nach Umweltqualitätszielkonzept (UQZK) der Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/stadtbodenkarte_2005/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtbodenkarte_2005.geschuetzte_boeden&format=image/png&STYLE=default",
+                      "width": 359,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "hro.stadtbodenkarte_2005.schutzwuerdigkeit",
+              "title": "Klassifizierung der Schutzwürdigkeit der einzelnen Bodentypen der Stadtbodenkarte der Hanse- und Universitätsstadt Rostock 2005",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/stadtbodenkarte_2005/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtbodenkarte_2005.schutzwuerdigkeit&format=image/png&STYLE=default",
+                      "width": 181,
+                      "height": 106
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -8774,12 +9175,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8856,12 +9264,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -8938,12 +9353,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9020,12 +9442,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9102,12 +9531,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9184,12 +9620,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9266,12 +9709,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9348,12 +9798,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9429,12 +9886,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -9966,12 +10430,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10048,12 +10519,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10154,12 +10632,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10235,12 +10720,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.973304,
-        12.278338,
-        54.0474,
-        54.185779
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10321,12 +10813,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.043812,
-        12.207198,
-        54.060087,
-        54.128158
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10383,12 +10882,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.023508,
-        12.217049,
-        54.048756,
-        54.129591
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10445,12 +10951,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.984516,
-        12.345588,
-        53.998362,
-        54.198398
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10507,12 +11020,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.063782,
-        12.176757,
-        54.057786,
-        54.102629
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10537,10 +11057,10 @@
               "name": "hro.plan-von-rostock_1911.plan-von-rostock_1911",
               "title": "Plan von Rostock 1911",
               "extent": [
-                11.916409,
-                12.426816,
-                54.010816,
-                54.259651
+                -180,
+                180,
+                -90,
+                90
               ],
               "styles": [
                 {
@@ -10569,12 +11089,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.714183,
-        12.700966,
-        53.941863,
-        54.318217
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10631,12 +11158,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.118387,
-        12.170088,
-        54.077941,
-        54.099576
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10693,12 +11227,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.114235,
-        12.155515,
-        54.07508,
-        54.095672
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10755,12 +11296,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.113696,
-        12.156547,
-        54.076943,
-        54.095332
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10817,12 +11365,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.109066,
-        12.160929,
-        54.070783,
-        54.096566
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10839,35 +11394,7 @@
         "hro.stadtplan_1889.stadtplan_1889"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO",
-        "title": "Stadtplan der Hanse- und Universitätsstadt Rostock 1889",
-        "capabilities": {
-          "layers": [
-            {
-              "name": "hro.stadtplan_1889.stadtplan_1889",
-              "title": "Stadtplan der Hanse- und Universitätsstadt Rostock 1889",
-              "extent": [
-                12.069046,
-                12.152738,
-                54.068865,
-                54.112537
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/stadtplan_1889/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.stadtplan_1889.stadtplan_1889&format=image/png&STYLE=default",
-                      "width": 127,
-                      "height": 32
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+        "featureInfo": "FeatureInfoHRO"
       },
       "layers": "hro.stadtplan_1889.stadtplan_1889"
     },
@@ -10879,12 +11406,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.069046,
-        12.152738,
-        54.068865,
-        54.112537
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -10941,12 +11475,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.124407,
-        12.154761,
-        54.08455,
-        54.094556
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11002,12 +11543,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11063,12 +11611,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11124,12 +11679,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11183,12 +11745,19 @@
       "name": "wiebeking_1786",
       "url": "https://geo.sv.rostock.de/geodienste/wiebeking_1786/wms",
       "infoUrl": "datenwerft:https://geo.sv.rostock.de/datenwerft/api/gdihrometadata/get-by-uuid/fd8554c0-d350-4367-a657-cd0343462395",
-      "extent": [
-        11.542633,
-        12.242645,
-        53.97484,
-        54.247393
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11245,12 +11814,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11326,12 +11902,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.488307,
-        12.837214,
-        53.545797,
-        54.285979
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11436,7 +12019,35 @@
         "hro.fluren_mv.fluren_mv"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Fluren in Mecklenburg-Vorpommern",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.fluren_mv.fluren_mv",
+              "title": "Fluren in Mecklenburg-Vorpommern",
+              "extent": [
+                10.460201,
+                14.414519,
+                53.084444,
+                54.693378
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/fluren_mv/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.fluren_mv.fluren_mv&format=image/png&STYLE=default",
+                      "width": 68,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -11467,12 +12078,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11548,12 +12166,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11629,12 +12254,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11710,12 +12342,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11791,12 +12430,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11873,12 +12519,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -11955,12 +12608,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12037,12 +12697,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12119,12 +12786,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12201,12 +12875,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12283,12 +12964,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12365,12 +13053,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12447,12 +13142,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12529,12 +13231,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12611,12 +13320,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12693,12 +13409,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12775,12 +13498,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12857,12 +13587,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -12987,12 +13724,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13069,12 +13813,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13151,12 +13902,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13233,12 +13991,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13315,12 +14080,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13397,12 +14169,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13479,12 +14258,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13633,12 +14419,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13787,12 +14580,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -13941,12 +14741,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14093,12 +14900,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14162,12 +14976,19 @@
       "type": "WMSLayer",
       "name": "farbinfrarot_2024",
       "url": "https://www.geodaten-mv.de/dienste/gdimv_dopcir",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14211,12 +15032,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14375,12 +15203,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.809442,
-        12.350685,
-        53.986329,
-        54.307473
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14436,12 +15271,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14486,12 +15328,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.909691,
-        12.326413,
-        53.949208,
-        54.194292
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14548,12 +15397,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.981391,
-        12.254799,
-        54.02209,
-        54.18277
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14610,12 +15466,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14660,12 +15523,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.016415,
-        12.178105,
-        54.013955,
-        54.190484
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14722,12 +15592,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        -0.5240530545892131,
-        19.715285378101466,
-        45.01244663136928,
-        56.93437988536484
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14772,12 +15649,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.951747,
-        12.318843,
-        54.026978,
-        54.258989
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14834,12 +15718,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.973128,
-        12.356926,
-        54.047536,
-        54.298553
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14892,12 +15783,19 @@
       "type": "WMSLayer",
       "name": "luftbild_2016",
       "url": "https://www.geodaten-mv.de/dienste/doparchiv_wms/service",
-      "extent": [
-        -0.5240530545892131,
-        19.715285378101466,
-        45.01244663136928,
-        56.93437988536484
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14938,12 +15836,19 @@
       "type": "WMSLayer",
       "name": "luftbild_2019",
       "url": "https://www.geodaten-mv.de/dienste/doparchiv_wms/service",
-      "extent": [
-        -0.5240530545892131,
-        19.715285378101466,
-        45.01244663136928,
-        56.93437988536484
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -14984,12 +15889,19 @@
       "type": "WMSLayer",
       "name": "luftbild_2022",
       "url": "https://www.geodaten-mv.de/dienste/doparchiv_wms/service",
-      "extent": [
-        -0.5240530545892131,
-        19.715285378101466,
-        45.01244663136928,
-        56.93437988536484
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15033,12 +15945,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15106,12 +16025,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.111319,
-        12.15997,
-        54.077278,
-        54.099291
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15168,12 +16094,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.112469,
-        12.36593,
-        54.149636,
-        54.280935
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15230,12 +16163,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        12.118888,
-        12.339937,
-        54.160084,
-        54.263775
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15293,12 +16233,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.488307,
-        12.837214,
-        53.545797,
-        54.285979
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15370,12 +16317,19 @@
       "type": "WMSLayer",
       "name": "ggb_mv",
       "url": "https://www.umweltkarten.mv-regierung.de/script/mv_a2_schutzgeb_wms.php",
-      "extent": [
-        10.397,
-        14.5069,
-        53.0409,
-        54.7222
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15451,12 +16405,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15604,12 +16565,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15683,12 +16651,19 @@
       "url": "https://www.umweltkarten.mv-regierung.de/script/mv_a2_biotope_wms.php",
       "minLevel": 1,
       "maxLevel": 20,
-      "extent": [
-        10.397,
-        14.5069,
-        53.0409,
-        54.7222
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15762,12 +16737,19 @@
       "url": "https://www.umweltkarten.mv-regierung.de/script/mv_a2_schutzgeb_wms.php",
       "minLevel": 1,
       "maxLevel": 20,
-      "extent": [
-        10.397,
-        14.5069,
-        53.0409,
-        54.7222
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15844,12 +16826,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -15921,12 +16910,19 @@
       "type": "WMSLayer",
       "name": "schutzgebiete_mv",
       "url": "https://www.umweltkarten.mv-regierung.de/script/mv_a2_schutzgeb_wms.php",
-      "extent": [
-        10.397,
-        14.5069,
-        53.0409,
-        54.7222
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16142,12 +17138,19 @@
       "type": "WMSLayer",
       "name": "schutzgebiete_vsg_mv",
       "url": "https://www.umweltkarten.mv-regierung.de/script/mv_a2_schutzgeb_wms.php",
-      "extent": [
-        10.397,
-        14.5069,
-        53.0409,
-        54.7222
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16224,12 +17227,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.977632,
-        12.320336,
-        54.039252,
-        54.255915
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16377,12 +17387,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.977632,
-        12.320336,
-        54.039252,
-        54.255915
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16554,12 +17571,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16683,12 +17707,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16765,12 +17796,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16847,12 +17885,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16929,12 +17974,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -16992,12 +18044,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17074,12 +18133,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17155,12 +18221,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17236,12 +18309,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17341,12 +18421,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17423,12 +18510,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17505,12 +18599,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17587,12 +18688,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17668,12 +18776,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17731,12 +18846,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17813,12 +18935,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -17895,12 +19024,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18006,7 +19142,35 @@
         "hro.sonstige_bauwerke.durchlaesse"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Sonstige Bauwerke in der Hanse- und Universitätsstadt Rostock",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.sonstige_bauwerke.durchlaesse",
+              "title": "Durchlässe in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/sonstige_bauwerke/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.sonstige_bauwerke.durchlaesse&format=image/png&STYLE=default",
+                      "width": 98,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -18038,12 +19202,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18120,12 +19291,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18202,12 +19380,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18284,12 +19469,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18395,7 +19587,35 @@
         "hro.werbeanlagen.werbeanlagen"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Werbeanlagen in der Hanse- und Universitätsstadt Rostock",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.werbeanlagen.werbeanlagen",
+              "title": "Werbeanlagen in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/werbeanlagen/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.werbeanlagen.werbeanlagen&format=image/png&STYLE=default",
+                      "width": 115,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -18425,12 +19645,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18506,12 +19733,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18587,12 +19821,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18668,12 +19909,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18749,12 +19997,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18878,12 +20133,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -18959,12 +20221,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19040,12 +20309,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19121,12 +20397,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19202,12 +20485,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19283,12 +20573,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460201,
-        14.414519,
-        53.084444,
-        54.693378
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19364,12 +20661,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19445,12 +20749,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19526,12 +20837,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19608,12 +20926,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        12.071695,
-        12.338282,
-        54.150436,
-        54.271348
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19858,12 +21183,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -19939,12 +21271,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20093,12 +21432,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20204,7 +21550,35 @@
         "hro.touristeninformationsbueros.touristeninformationsbueros"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Touristeninformationsbüros in der Hanse- und Universitätsstadt Rostock",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.touristeninformationsbueros.touristeninformationsbueros",
+              "title": "Touristeninformationsbüros in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/touristeninformationsbueros/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.touristeninformationsbueros.touristeninformationsbueros&format=image/png&STYLE=default",
+                      "width": 185,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -20236,12 +21610,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20413,12 +21794,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20518,12 +21906,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20599,12 +21994,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20681,12 +22083,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20762,12 +22171,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20915,12 +22331,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -20937,35 +22360,7 @@
         "hro.geh_und_radwegereinigung.radwegereinigung"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO",
-        "title": "Geh- und Radwegereinigung gemäß Straßenreinigungssatzung der Hanse- und Universitätsstadt Rostock",
-        "capabilities": {
-          "layers": [
-            {
-              "name": "hro.geh_und_radwegereinigung.radwegereinigung",
-              "title": "Radwege-Reinigung gemäß Straßenreinigungssatzung der Hanse- und Universitätsstadt Rostock",
-              "extent": [
-                11.993611,
-                12.304498,
-                54.048608,
-                54.246594
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/geh_und_radwegereinigung/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.geh_und_radwegereinigung.radwegereinigung&format=image/png&STYLE=default",
-                      "width": 275,
-                      "height": 180
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+        "featureInfo": "FeatureInfoHRO"
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -20996,12 +22391,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21077,12 +22479,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21230,12 +22639,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21292,12 +22708,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21372,12 +22795,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        4.347384,
-        16.978721,
-        46.796141,
-        55.357342
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21458,12 +22888,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21539,12 +22976,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21581,8 +23025,8 @@
                   "legend": [
                     {
                       "url": "https://geo.sv.rostock.de/geodienste/strassenreinigung/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.strassenreinigung.strassenwinterdienst&format=image/png&STYLE=default",
-                      "width": 155,
-                      "height": 106
+                      "width": 152,
+                      "height": 32
                     }
                   ]
                 }
@@ -21620,12 +23064,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21706,12 +23157,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21792,12 +23250,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21878,12 +23343,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -21964,12 +23436,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22050,12 +23529,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22136,12 +23622,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22222,12 +23715,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22308,12 +23808,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22395,12 +23902,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22476,12 +23990,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22557,12 +24078,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.488307,
-        12.837214,
-        53.545797,
-        54.285979
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22831,12 +24359,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22913,12 +24448,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -22995,12 +24537,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23125,12 +24674,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23207,12 +24763,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23288,12 +24851,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.952918,
-        12.318151,
-        54.005755,
-        54.244722
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23394,12 +24964,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.488307,
-        12.837214,
-        53.545797,
-        54.285979
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23474,12 +25051,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.33942,
-        14.47699,
-        53.039183,
-        54.820921
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23676,12 +25260,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23758,12 +25349,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23840,12 +25438,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -23922,12 +25527,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24052,12 +25664,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24134,12 +25753,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24216,12 +25842,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24298,12 +25931,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24403,12 +26043,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24465,12 +26112,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24528,12 +26182,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24639,7 +26300,35 @@
         "hro.taxistaende.taxistaende"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO"
+        "featureInfo": "FeatureInfoHRO",
+        "title": "Taxistände in der Hanse- und Universitätsstadt Rostock",
+        "capabilities": {
+          "layers": [
+            {
+              "name": "hro.taxistaende.taxistaende",
+              "title": "Taxistände in der Hanse- und Universitätsstadt Rostock",
+              "extent": [
+                11.993611,
+                12.304498,
+                54.048608,
+                54.246594
+              ],
+              "styles": [
+                {
+                  "name": "default",
+                  "title": "default",
+                  "legend": [
+                    {
+                      "url": "https://geo.sv.rostock.de/geodienste/taxistaende/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.taxistaende.taxistaende&format=image/png&STYLE=default",
+                      "width": 98,
+                      "height": 32
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       },
       "featureInfo": {
         "responseType": "text/html",
@@ -24671,12 +26360,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        12.005031,
-        12.430256,
-        54.052404,
-        54.246562
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24734,12 +26430,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24816,12 +26519,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -24898,12 +26608,19 @@
       "maxLevel": 20,
       "tilingSchema": "mercator",
       "singleImage2d": true,
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -25003,12 +26720,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -25108,12 +26832,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.983424,
-        12.454217,
-        53.931425,
-        54.27195
-      ],
+      "extent": {
+        "coordinates": [
+          11.983424,
+          53.931425,
+          12.454217,
+          54.27195
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "layers": "hro.fliessgewaesser.fliessgewaesser",
       "version": "1.3.0",
       "parameters": {
@@ -25213,12 +26944,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.1.1",
       "parameters": {
         "FORMAT": "image/png",
@@ -25275,12 +27013,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.916409,
-        12.426816,
-        54.010816,
-        54.259651
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "layers": "hro.hoch_anstehendes_grundwasser",
       "version": "1.3.0",
       "parameters": {
@@ -25325,12 +27070,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -25842,12 +27594,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.460264,
-        14.29386,
-        53.084448,
-        54.692802
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -26023,12 +27782,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.483706,
-        14.361667,
-        53.022576,
-        54.68195
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -26103,12 +27869,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.488307,
-        12.837214,
-        53.545797,
-        54.285979
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -26166,12 +27939,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.990429,
-        12.330507,
-        54.082212,
-        54.260837
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -26188,35 +27968,7 @@
         "hro.schoepfwerkeinflussbereiche.schoepfwerkeinflussbereiche"
       ],
       "properties": {
-        "featureInfo": "FeatureInfoHRO",
-        "title": "Schöpfwerkeinflussbereiche in der Hanse- und Universitätsstadt Rostock und Umgebung",
-        "capabilities": {
-          "layers": [
-            {
-              "name": "hro.schoepfwerkeinflussbereiche.schoepfwerkeinflussbereiche",
-              "title": "Schöpfwerkeinflussbereiche in der Hanse- und Universitätsstadt Rostock und Umgebung",
-              "extent": [
-                11.990429,
-                12.330507,
-                54.082212,
-                54.260837
-              ],
-              "styles": [
-                {
-                  "name": "default",
-                  "title": "default",
-                  "legend": [
-                    {
-                      "url": "https://geo.sv.rostock.de/geodienste/schoepfwerkeinflussbereiche/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=hro.schoepfwerkeinflussbereiche.schoepfwerkeinflussbereiche&format=image/png&STYLE=default",
-                      "width": 186,
-                      "height": 32
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+        "featureInfo": "FeatureInfoHRO"
       },
       "layers": "hro.schoepfwerkeinflussbereiche.schoepfwerkeinflussbereiche"
     },
@@ -26227,12 +27979,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.483706,
-        14.361667,
-        53.022576,
-        54.68195
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -26307,12 +28066,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        10.483706,
-        14.361667,
-        53.022576,
-        54.68195
-      ],
+      "extent": {
+        "coordinates": [
+          11.993611,
+          54.048608,
+          12.304498,
+          54.246594
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",
@@ -26388,12 +28154,19 @@
       "minLevel": 1,
       "maxLevel": 20,
       "tilingSchema": "mercator",
-      "extent": [
-        11.993611,
-        12.304498,
-        54.048608,
-        54.246594
-      ],
+      "extent": {
+        "coordinates": [
+          11.916409,
+          54.010816,
+          12.426816,
+          54.259651
+        ],
+        "projection": {
+          "type": "Projection",
+          "epsg": "EPSG:4326"
+        },
+        "type": "Extent"
+      },
       "version": "1.3.0",
       "parameters": {
         "FORMAT": "image/png",

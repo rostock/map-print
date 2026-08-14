@@ -49,6 +49,7 @@ export default async function createAndHandleBlob(
   overlays?: CanvasAndPlacement[],
 ): Promise<void> {
   let canvas = await renderScreenshot(app, width);
+  console.log('screenshot debug', { requestedWidth: width, actualWidth: canvas.width, actualHeight: canvas.height });
   if (overlays) {
     canvas = addOverlayCanvasToMap(canvas, overlays);
   }

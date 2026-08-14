@@ -176,7 +176,6 @@
     watch,
   } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { useTheme } from 'vuetify';
   import type { VcsUiApp } from '@vcmap/ui';
   import {
     getLegendEntries,
@@ -296,7 +295,6 @@
       const { config, state } = plugin;
 
       const { t } = useI18n();
-      const theme = useTheme();
 
       const { entries: legendEntries, destroy } = getLegendEntries(app);
       const enableLegendPrinting = computed(
@@ -480,6 +478,7 @@
 
       /** Liefert die geschlossenen Eckpunkte des um state.rotation rotierten Rechtecks. */
       function getRectangleCoordinates(s: PrintAreaState): Coordinate[] {
+        console.log("S:", s);
         const halfWidth = s.width / 2;
         const halfHeight = s.height / 2;
         const corners: Coordinate[] = [
@@ -488,12 +487,14 @@
           [halfWidth, halfHeight],
           [-halfWidth, halfHeight],
         ];
+        console.log("Corners:", corners);
         const cos = Math.cos(s.rotation);
         const sin = Math.sin(s.rotation);
         const rotated = corners.map<Coordinate>(([x, y]) => [
           s.center[0] + x * cos - y * sin,
           s.center[1] + x * sin + y * cos,
         ]);
+        console.log("KA:", [...rotated, rotated[0]]);
         return [...rotated, rotated[0]];
       }
 
@@ -557,21 +558,21 @@
 
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
-        console.log("baue Styling");
-        console.log(theme.current.value.colors);
-        const primary = getColorByKey('primary');
-        const secondary = getColorByKey('secondary');
+        console.log(getColorByKey(app, 'background'));
+        const primary = getColorByKey(app, 'primary');
+        const secondary = getColorByKey(app, 'secondary');
+        const background = getColorByKey(app, 'background');
         if (feature.get(printAreaRoleKey) === printAreaHandleRole) {
           return new Style({
             image: new CircleStyle({
               radius: 7,
               fill: new Fill({ color: secondary }),
-              stroke: new Stroke({ color: theme.current.value.colors.background, width: 2 }),
+              stroke: new Stroke({ color: background, width: 2 }),
             }),
           });
         }
         return new Style({
-          fill: new Fill({ color: theme.current.value.colors.background }),
+          fill: new Fill({ color: background + "80" }),
           stroke: new Stroke({
             color: primary,
             width: 2,
@@ -755,7 +756,6 @@
         if (!createPrintAreaFeatures(activeMap)) {
           return;
         }
-        console.log("dsdasasdsad");
         printAreaLayer = new VectorLayer({
           name: printAreaLayerName,
           projection: {
@@ -763,7 +763,6 @@
           }
         });
         printAreaLayer.setStyle(printAreaStyleFunction);
-        console.log("deine mudder");
 
         printAreaLayer.addFeatures([rectangleFeature!, handleFeature!]);
         app.layers.add(printAreaLayer);
@@ -772,9 +771,7 @@
             `Activating print-area layer failed: ${error as string}`,
           );
         });
-        setTimeout(() => {
-  console.log(printAreaLayer);
-}, 1000);
+        setTimeout(() => {}, 1000);
         printAreaMap = activeMap;
         printAreaInteraction = createPrintAreaInteraction();
         activeMap.olMap.addInteraction(printAreaInteraction);
@@ -891,6 +888,10 @@
         );
         ctx.drawImage(sourceCanvas, 0, 0);
         ctx.restore();
+
+        // gibt den zu druckenden Kartenbereich aus
+        // console.log('crop debug', target.toDataURL('image/png')); // PNG behält Transparenz sichtbar
+        
 
         return target;
       }
@@ -1221,7 +1222,6 @@
             overlayWindows.push(featureInfo);
           }
         }
-        console.log(config);
         // could also be put into styles.js
         const fonts: { name: string; regular: string; bold: string } = {
           name: config.font?.name,
@@ -1279,6 +1279,24 @@
                   canvas: HTMLCanvasElement,
                   translate: (s: string) => string,
                 ): Promise<Blob> => {
+                  console.log('crop debug full', {
+        canvasW: canvas.width, canvasH: canvas.height,
+        mapSizeW: mapSize.width, mapSizeH: mapSize.height,
+        regionW: printAreaScreenRegion!.widthPixel, regionH: printAreaScreenRegion!.heightPixel,
+        scaleX: canvas.width / mapSize.width,
+        scaleY: canvas.height / mapSize.height,
+      });
+      console.log('full scale debug', {
+  printScaleInput: printScale.value,
+  printAreaWidthM: printAreaState!.width,
+  printAreaHeightM: printAreaState!.height,
+  viewResolution: (activeMap as OpenlayersMap).olMap.getView().getResolution(),
+  mapSizeW: mapSize.width, mapSizeH: mapSize.height,
+  regionW: printAreaScreenRegion!.widthPixel, regionH: printAreaScreenRegion!.heightPixel,
+  canvasW: canvas.width, canvasH: canvas.height,
+  imgPlacementW: pdfCreator.imgPlacement!.size.width,
+  imgPlacementH: pdfCreator.imgPlacement!.size.height,
+});
                   const cropped = cropRotatedCanvasToPrintArea(
                     canvas,
                     mapSize,
@@ -1327,7 +1345,7 @@
             });
           })
           .finally(() => {
-            printAreaAlignment?.restore();
+           //printAreaAlignment?.restore();
             // Sicherheitsnetz: falls createFn nie aufgerufen wurde (z.B.
             // Fehler vor dem eigentlichen Screenshot), Layer trotzdem wieder
             // einblenden. activate() auf einem bereits aktiven Layer ist

@@ -51,8 +51,8 @@ type Legend = {
   config: {
     format: keyof typeof pageSizes;
     orientation:
-      | LegendOrientationOptions.LANDSCAPE
-      | LegendOrientationOptions.PORTRAIT;
+    | LegendOrientationOptions.LANDSCAPE
+    | LegendOrientationOptions.PORTRAIT;
   };
   items: PrintableLegendItems;
 };
@@ -127,13 +127,13 @@ export default class PDFCreator {
   pdfSize: Size =
     defaultOptions.orientationDefault === OrientationOptions.PORTRAIT
       ? {
-          width: pageSizes[defaultOptions.formatDefault][0],
-          height: pageSizes[defaultOptions.formatDefault][1],
-        }
+        width: pageSizes[defaultOptions.formatDefault][0],
+        height: pageSizes[defaultOptions.formatDefault][1],
+      }
       : {
-          width: pageSizes[defaultOptions.formatDefault][1],
-          height: pageSizes[defaultOptions.formatDefault][0],
-        };
+        width: pageSizes[defaultOptions.formatDefault][1],
+        height: pageSizes[defaultOptions.formatDefault][0],
+      };
 
   /** The line width where content can be added (excluding margins). */
   maxLineWidth =
@@ -228,7 +228,16 @@ export default class PDFCreator {
   private readonly mapInfoGraphicsHeight = 0.32;
 
   /** Abstand (in Zoll) zwischen dem Textblock der Karteninformation und der Grafikzeile. */
-  private readonly mapInfoGraphicsGap = 0.09;
+  private readonly mapInfoGraphicsGap = 0.04;
+
+  /**
+   * Höhe (in Zoll) des Nordpfeils — doppelt so groß wie die nominelle
+   * Grafikzeilen-Höhe ({@link mapInfoGraphicsHeight}), damit er deutlich
+   * sichtbarer ist. Da er dieselbe Höhe wie mapInfoGraphicsHeight
+   * überragt, muss der Platz für nachfolgende Elemente (Kartenlink) auf
+   * dieser (größeren) Höhe basieren, nicht auf mapInfoGraphicsHeight.
+   */
+  private readonly northArrowHeight = this.mapInfoGraphicsHeight * 2;
 
   /** The current layer for which a legend page is being added */
   currentLayerTitle?: string;
@@ -368,23 +377,25 @@ export default class PDFCreator {
       };
     }
 
-    // contact und mapInfo werden auf eine gemeinsame Zeilenzahl ausgerichtet,
-    // damit beide Boxen (und weiter unten die description) auf derselben
-    // Höhe beginnen, unabhängig davon, welche der beiden mehr Inhalt hat.
-    // Basiert auf der tatsächlichen, umgebrochenen Zeilenzahl statt der
-    // ursprünglichen Eingabezeilen.
+    // Kontakt bestimmt die gemeinsame Kopf-Höhe ("ausgehend von Kontakt"):
+    // beide Boxen beginnen oben auf derselben Höhe. Maßstabsbalken/Nordpfeil
+    // und der Kartenlink hängen NICHT mehr in diese Referenzzeilenzahl mit
+    // rein — sie werden beim Zeichnen direkt unterhalb des tatsächlichen
+    // Karteninformation-Textes angehängt (siehe _calcMapInfoGraphicsRowY).
+    // Ohne Kontakt fällt die Karteninformation auf ihre eigene Zeilenzahl
+    // zurück.
     const contactLineCount = wrappedContact
       ? wrappedContact.text.length + 1
       : 0;
     const mapInfoLineCount = wrappedMapInfo
-      ? wrappedMapInfo.text.length + 1 + (pdfCreatorOptions.mapLink ? 1 : 0)
+      ? wrappedMapInfo.text.length + 1
       : 0;
-    const sharedInfoLineCount = Math.max(contactLineCount, mapInfoLineCount);
+    const topReferenceLineCount = contactLineCount || mapInfoLineCount;
 
     if (wrappedContact) {
       this._setTextStyle('info');
       this.contact = wrappedContact;
-      this.contactPlacement = this._calcContactPlacement(sharedInfoLineCount);
+      this.contactPlacement = this._calcContactPlacement(contactLineCount);
     }
 
     if (wrappedMapInfo) {
@@ -393,7 +404,8 @@ export default class PDFCreator {
       if (pdfCreatorOptions.mapLink) {
         this.mapLink = pdfCreatorOptions.mapLink;
       }
-      this.mapInfoPlacement = this._calcMapInfoPlacement(sharedInfoLineCount);
+      this.mapInfoPlacement =
+        this._calcMapInfoPlacement(topReferenceLineCount);
     }
 
     if (pdfCreatorOptions.description) {
@@ -457,17 +469,17 @@ export default class PDFCreator {
         this.font,
         'normal',
         this.formatting[
-          `${textElement}.fontWeight` as keyof Omit<PageStyle, 'pageMargins'>
+        `${textElement}.fontWeight` as keyof Omit<PageStyle, 'pageMargins'>
         ] || fontWeights.REGULAR,
       )
       .setFontSize(
         this.formatting[
-          `${textElement}.fontSize` as keyof Omit<PageStyle, 'pageMargins'>
+        `${textElement}.fontSize` as keyof Omit<PageStyle, 'pageMargins'>
         ] || 11,
       )
       .setLineHeightFactor(
         this.formatting[
-          `${textElement}.lineHeight` as keyof Omit<PageStyle, 'pageMargins'>
+        `${textElement}.lineHeight` as keyof Omit<PageStyle, 'pageMargins'>
         ] || 1.15,
       );
   }
@@ -548,11 +560,20 @@ export default class PDFCreator {
    */
   private _calcHeaderIconSize(): number {
     this._setTextStyle('title');
+
     const desired =
-      this._calcTotalLineHeight(this.formatting['logo.scale']) * 2.5;
-    const availableRowHeight = this._calcTotalLineHeight(
-      this.formatting[`title.maxLineCount.${this.orientation}`],
-    );
+      this._calcTotalLineHeight(this.formatting['logo.scale']) * 5.1;
+
+    const multiplier =
+      this.orientation === OrientationOptions.LANDSCAPE
+        ? 3
+        : 1.2;
+
+    const availableRowHeight =
+      this._calcTotalLineHeight(
+        this.formatting[`title.maxLineCount.${this.orientation}`],
+      ) * multiplier;
+
     return Math.min(desired, availableRowHeight);
   }
 
@@ -581,7 +602,7 @@ export default class PDFCreator {
           this._calcTotalLineHeight(
             this.formatting[`title.maxLineCount.${this.orientation}`],
           ) /
-            2 -
+          2 -
           printHeight / 2,
       },
       size: {
@@ -608,7 +629,7 @@ export default class PDFCreator {
           this._calcTotalLineHeight(
             this.formatting[`title.maxLineCount.${this.orientation}`],
           ) /
-            2 -
+          2 -
           printSize / 2,
       },
       size: {
@@ -654,30 +675,29 @@ export default class PDFCreator {
         ? this.formatting.elementMargin
         : this.formatting.elementMargin / 2;
 
-    // Zusätzlicher Platz unterhalb des Textes für die Grafikzeile
-    // (Maßstabsbalken + Nordpfeil), die jetzt Teil der Karteninformation-Box
-    // ist, statt auf der Karte zu liegen.
-    const graphicsReserved =
-      this.mapInfoGraphicsHeight + this.mapInfoGraphicsGap;
-
+    // Oben auf derselben Höhe wie die Kontakt-Box (lineCount ist im
+    // Regelfall die Kontakt-Zeilenzahl, "ausgehend von Kontakt").
+    // Maßstabsbalken, Nordpfeil und Kartenlink werden separat direkt
+    // unterhalb des tatsächlichen Textendes angehängt (siehe
+    // _calcMapInfoGraphicsRowY, _drawScaleBar, create()) und beeinflussen
+    // diese Platzierung bewusst nicht mehr.
     return {
       coords: {
         x: this.contact
           ? this.contactPlacement!.coords.x +
-            this.contactPlacement!.size.width +
-            xMargin
+          this.contactPlacement!.size.width +
+          xMargin
           : this.formatting.pageMargins[3],
         y:
           this.pdfSize.height -
           this.formatting.pageMargins[2] -
-          this._calcTotalLineHeight(lineCount) -
-          graphicsReserved,
+          this._calcTotalLineHeight(lineCount),
       },
       size: {
         width: this._calcElementWidth(
           this.formatting[`info.widthPortion.${this.orientation}`],
         ),
-        height: this._calcTotalLineHeight(lineCount) + graphicsReserved,
+        height: this._calcTotalLineHeight(lineCount),
       },
     };
   }
@@ -734,27 +754,29 @@ export default class PDFCreator {
    * oberen Seitenrand. Wird sowohl von der dynamischen ({@link _calcImagePlacement})
    * als auch von der festen, konfigurierten Platzierung
    * ({@link _calcFixedImagePlacement}) des Kartenbereichs verwendet.
+   * Der Abstand zum Bild ist bewusst nur halb so groß wie das sonst
+   * übliche elementMargin (z.B. zwischen QR-Code/Logo und Titel), damit
+   * die Kopfzeile enger an den Kartenbereich heranrückt.
    */
   private _calcImageUpperBorder(): number {
+    const gapToImage = this.formatting.elementMargin / 2;
     if (this.title) {
       return (
         this.titlePlacement!.coords.y +
         this.titlePlacement!.size.height +
-        this.formatting.elementMargin
+        gapToImage
       );
     }
     if (this.logo) {
       return (
-        this.logoPlacement!.coords.y +
-        this.logoPlacement!.size.height +
-        this.formatting.elementMargin
+        this.logoPlacement!.coords.y + this.logoPlacement!.size.height + gapToImage
       );
     }
     if (this.qrCodePlacement) {
       return (
         this.qrCodePlacement.coords.y +
         this.qrCodePlacement.size.height +
-        this.formatting.elementMargin
+        gapToImage
       );
     }
     return this.formatting.pageMargins[0];
@@ -908,22 +930,40 @@ export default class PDFCreator {
    * Setzt `scaleDenominator` voraus (siehe {@link PDFCreatorOptions}) —
    * ohne diesen Wert und ohne Karteninformation-Box wird nichts gezeichnet.
    */
+  /**
+   * Y-Position (oberer Rand) der Grafikzeile (Maßstabsbalken + Nordpfeil)
+   * innerhalb der Karteninformation-Box: direkt unterhalb der letzten
+   * tatsächlich gezeichneten Textzeile (Header + Infozeilen, deren letzte
+   * die Maßstabsbeschriftung ist) plus einem kleinen Abstand —
+   * unabhängig von der (jetzt an Kontakt ausgerichteten) nominellen
+   * Boxhöhe aus {@link _calcMapInfoPlacement}. So steht die
+   * Maßstabsbeschriftung immer direkt über dem Balken, egal wie lang
+   * Kontakt- und Karteninformation-Text jeweils sind.
+   */
+  private _calcMapInfoGraphicsRowY(): number {
+    const textLineCount = this.mapInfo!.text.length + 1; // +1 Header
+    return (
+      this.mapInfoPlacement!.coords.y +
+      this._calcTotalLineHeight(textLineCount) +
+      this.mapInfoGraphicsGap
+    );
+  }
+
   private _drawScaleBar(): void {
-    if (!this.mapInfoPlacement || !this.scaleDenominator) {
+    if (!this.mapInfoPlacement || !this.scaleDenominator || !this.mapInfo) {
       return;
     }
 
     const metersPerInch = this.scaleDenominator * 0.0254;
 
     // Grafikzeile der Karteninformation-Box: Maßstabsbalken links,
-    // Nordpfeil rechts (siehe _drawNorthArrow) — Reservierung erfolgt in
-    // _calcMapInfoPlacement über dieselben Konstanten.
-    const rowY =
-      this.pdfSize.height -
-      this.formatting.pageMargins[2] -
-      this.mapInfoGraphicsHeight;
+    // Nordpfeil rechts (siehe _drawNorthArrow) — direkt unterhalb der
+    // letzten tatsächlich gezeichneten Textzeile (= Maßstabsbeschriftung),
+    // damit sie unmittelbar über dem Balken steht (siehe
+    // _calcMapInfoGraphicsRowY).
+    const rowY = this._calcMapInfoGraphicsRowY();
     const northArrowWidth = 0.17;
-    const northArrowGap = 0.16;
+    const northArrowGap = 0.08;
 
     // Platz für die Einheit-Beschriftung nach dem Balkenende einkalkulieren.
     const unitLabelReserve = 0.22;
@@ -1036,18 +1076,21 @@ export default class PDFCreator {
     this.pdfDoc.setLineWidth(0.006);
   }
 
-  /**
- * Zeichnet einen schlanken, zweifarbigen Nordpfeil.
+ /**
+ * Zeichnet einen zweifarbigen Nordpfeil auf Basis der
+ * gelieferten SVG-Vorlage.
  *
- * Die linke Hälfte ist schwarz, die rechte Hälfte weiß.
- * Beide Flächen treffen sich an der gemeinsamen Nordspitze.
- * Der Nordpfeil wird entsprechend northArrowRotation gedreht.
+ * Die Position und Größe entsprechen der bisherigen
+ * Nordpfeil-Implementierung.
  *
- * Wird rechtsbündig in der Grafikzeile der Karteninformation-Box
- * platziert, neben dem Maßstabsbalken (siehe {@link _drawScaleBar}).
+ * - schwarze linke Hälfte
+ * - weiße rechte Hälfte
+ * - charakteristische Einkerbung am unteren Ende
+ * - schlanke, nach oben zulaufende Pfeilform
+ * - Rotation über northArrowRotation
  */
 private _drawNorthArrow(): void {
-  if (!this.mapInfoPlacement) {
+  if (!this.imgPlacement) {
     return;
   }
 
@@ -1055,19 +1098,17 @@ private _drawNorthArrow(): void {
   // Größe und Position
   // ---------------------------------------------------------
 
-  const height = this.mapInfoGraphicsHeight;
-  const width = 0.17;
+  // Diese Werte entsprechen der bisherigen Positionierung
+  // des Nordpfeils.
+  const height = this.northArrowHeight;
+  const width = height * (0.42 / 0.62); // Seitenverhältnis der Ursprungsform beibehalten
+
+  const rowY = this._calcMapInfoGraphicsRowY();
 
   // Rotation in Radiant
   const rotation = this.northArrowRotation ?? 0;
 
-  // Mittelpunkt des Nordpfeils: rechtsbündig in der Grafikzeile,
-  // dieselbe Zeile wie der Maßstabsbalken.
-  const rowY =
-    this.pdfSize.height -
-    this.formatting.pageMargins[2] -
-    this.mapInfoGraphicsHeight;
-
+  // Mittelpunkt des Nordpfeils
   const center = {
     x:
       this.mapInfoPlacement.coords.x +
@@ -1081,16 +1122,9 @@ private _drawNorthArrow(): void {
   // Rotation
   // ---------------------------------------------------------
 
-  // Vorzeichen von sin invertiert: mit der Standard-Rotationsmatrix (unten)
-  // in diesem y-nach-unten-Koordinatensystem vertauschten sich sonst Ost
-  // und West (Norden/Süden — auf der senkrechten Achse — blieben davon
-  // unberührt, weshalb der Fehler dort nicht auffiel).
   const cos = Math.cos(rotation);
-  const sin = -Math.sin(rotation);
+  const sin = Math.sin(rotation);
 
-  /**
-   * Dreht einen relativ zum Mittelpunkt definierten Punkt.
-   */
   const rotate = (
     dx: number,
     dy: number,
@@ -1099,20 +1133,22 @@ private _drawNorthArrow(): void {
     center.y + dx * sin + dy * cos,
   ];
 
-  /**
-   * Zeichnet ein geschlossenes Polygon.
-   *
-   * jsPDF.lines() benötigt relative Liniensegmente.
-   */
+  // ---------------------------------------------------------
+  // Polygon-Hilfsfunktion
+  // ---------------------------------------------------------
+
   const drawPolygon = (
     points: [number, number][],
     style: 'F' | 'FD',
   ): void => {
+    if (points.length < 3) {
+      return;
+    }
+
     const start = points[0];
 
     const segments: [number, number][] = [];
 
-    // Linien zwischen den aufeinanderfolgenden Punkten
     for (let i = 1; i < points.length; i += 1) {
       segments.push([
         points[i][0] - points[i - 1][0],
@@ -1120,7 +1156,7 @@ private _drawNorthArrow(): void {
       ]);
     }
 
-    // Polygon zurück zum Ausgangspunkt schließen
+    // Letzte Linie zurück zum Ausgangspunkt
     segments.push([
       start[0] - points[points.length - 1][0],
       start[1] - points[points.length - 1][1],
@@ -1137,50 +1173,100 @@ private _drawNorthArrow(): void {
   };
 
   // ---------------------------------------------------------
-  // Geometrie des Nordpfeils
+  // Grundabmessungen
   // ---------------------------------------------------------
 
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
   /*
-   * Unrotierte Grundform:
+   * Grundform der SVG:
    *
-   *                 ▲
-   *                /|\
-   *               /█|░\
-   *              /██|░░\
-   *             /███|░░░\
-   *            /████|░░░░\
-   *           ◄─────┴─────►
+   *                  ▲
+   *                 /█\
+   *                /███\
+   *               /█████\
+   *              /██████\
+   *             /███│████\
+   *            /████│█████\
+   *           /█████│██████\
+   *          ◄──────┘──────►
    *
-   * █ = schwarze linke Hälfte
-   * ░ = weiße rechte Hälfte
+   * Die Unterseite besitzt eine deutliche Einkerbung.
    */
 
-  // Gemeinsame Nordspitze
-  const tip = rotate(0, -halfHeight);
-
-  // Linker äußerer Fußpunkt
-  const leftBottom = rotate(-halfWidth, halfHeight);
-
-  // Mittelpunkt der unteren Kante
-  const bottomCenter = rotate(0, halfHeight * 0.65);
-
-  // Rechter äußerer Fußpunkt
-  const rightBottom = rotate(halfWidth, halfHeight);
-
   // ---------------------------------------------------------
-  // Linke schwarze Hälfte
+  // Äußere Form
   // ---------------------------------------------------------
 
-  this.pdfDoc.setFillColor(20, 20, 20);
-  this.pdfDoc.setDrawColor(20, 20, 20);
-  this.pdfDoc.setLineWidth(0.006);
+  const tip = rotate(
+    0,
+    -halfHeight,
+  );
 
+  const leftBottom = rotate(
+    -halfWidth,
+    halfHeight,
+  );
+
+  const rightBottom = rotate(
+    halfWidth,
+    halfHeight,
+  );
+
+  // ---------------------------------------------------------
+  // Eingekerbter Mittelpunkt
+  // ---------------------------------------------------------
+
+  // Der Mittelpunkt liegt bewusst deutlich oberhalb
+  // der beiden äußeren unteren Enden.
+  //
+  // 0.65 = ausgewogene Einkerbung entsprechend der
+  // Charakteristik der SVG-Vorlage.
+  const bottomCenter = rotate(
+    0,
+    halfHeight * 0.65,
+  );
+
+  // ---------------------------------------------------------
+  // Schwarze Grundform
+  // ---------------------------------------------------------
+
+  this.pdfDoc.setFillColor(
+    20,
+    20,
+    20,
+  );
+
+  this.pdfDoc.setDrawColor(
+    20,
+    20,
+    20,
+  );
+
+  this.pdfDoc.setLineWidth(
+    0.005,
+  );
+
+  /*
+   * Die komplette äußere Pfeilform.
+   *
+   * Wichtig ist hier die Reihenfolge:
+   *
+   * Spitze
+   *   ↓
+   * rechter Fuß
+   *   ↓
+   * Einkerbung
+   *   ↓
+   * linker Fuß
+   *   ↓
+   * zurück zur Spitze
+   */
   drawPolygon(
     [
       tip,
+      rightBottom,
       bottomCenter,
       leftBottom,
     ],
@@ -1188,34 +1274,145 @@ private _drawNorthArrow(): void {
   );
 
   // ---------------------------------------------------------
-  // Rechte weiße Hälfte
+  // Weißer innerer Ausschnitt
   // ---------------------------------------------------------
 
-  this.pdfDoc.setFillColor(255, 255, 255);
-  this.pdfDoc.setDrawColor(20, 20, 20);
-  this.pdfDoc.setLineWidth(0.006);
+  /*
+   * Der weiße Ausschnitt folgt der charakteristischen
+   * Innenform der SVG.
+   *
+   * Dadurch bleiben außen zwei schwarze Schenkel stehen.
+   */
+
+  const innerTop = rotate(
+    0,
+    -halfHeight * 0.18,
+  );
+
+  const innerRightTop = rotate(
+    width * 0.055,
+    -height * 0.12,
+  );
+
+  const innerRightBottom = rotate(
+    halfWidth * 0.72,
+    halfHeight * 0.70,
+  );
+
+  const innerLeftBottom = rotate(
+    -halfWidth * 0.72,
+    halfHeight * 0.70,
+  );
+
+  this.pdfDoc.setFillColor(
+    255,
+    255,
+    255,
+  );
+
+  this.pdfDoc.setDrawColor(
+    255,
+    255,
+    255,
+  );
 
   drawPolygon(
     [
-      tip,
-      rightBottom,
-      bottomCenter,
+      innerTop,
+      innerRightTop,
+      innerRightBottom,
+      innerLeftBottom,
     ],
-    'FD',
+    'F',
   );
 
   // ---------------------------------------------------------
-  // Feine Trennlinie zwischen den beiden Flächen
+  // Schwarzer Mittelsteg
   // ---------------------------------------------------------
 
-  this.pdfDoc.setDrawColor(20, 20, 20);
-  this.pdfDoc.setLineWidth(0.004);
+  /*
+   * Der Mittelsteg ist leicht asymmetrisch.
+   *
+   * Dadurch nähert sich die Form stärker der SVG-Vorlage
+   * an als ein einfacher symmetrischer Strich.
+   */
+
+  const stemTop = rotate(
+    -width * 0.015,
+    -height * 0.17,
+  );
+
+  const stemTopRight = rotate(
+    width * 0.045,
+    -height * 0.10,
+  );
+
+  const stemBottomRight = rotate(
+    width * 0.29,
+    height * 0.30,
+  );
+
+  const stemBottomLeft = rotate(
+    0,
+    height * 0.12,
+  );
+
+  this.pdfDoc.setFillColor(
+    20,
+    20,
+    20,
+  );
+
+  drawPolygon(
+    [
+      stemTop,
+      stemTopRight,
+      stemBottomRight,
+      stemBottomLeft,
+    ],
+    'F',
+  );
+
+  // ---------------------------------------------------------
+  // Außenkontur
+  // ---------------------------------------------------------
+
+  this.pdfDoc.setDrawColor(
+    20,
+    20,
+    20,
+  );
+
+  this.pdfDoc.setLineWidth(
+    0.004,
+  );
 
   this.pdfDoc.line(
     tip[0],
     tip[1],
+    rightBottom[0],
+    rightBottom[1],
+  );
+
+  this.pdfDoc.line(
+    rightBottom[0],
+    rightBottom[1],
     bottomCenter[0],
     bottomCenter[1],
+  );
+
+  this.pdfDoc.line(
+    bottomCenter[0],
+    bottomCenter[1],
+    leftBottom[0],
+    leftBottom[1],
+  );
+
+  this.pdfDoc.line(
+    leftBottom[0],
+    leftBottom[1],
+    tip[0],
+    tip[1],
   );
 }
   /**
@@ -1265,7 +1462,7 @@ private _drawNorthArrow(): void {
 
     this.pdfDoc.addImage(
       canvas,
-      'JPEG',
+      'PNG',
       this.imgPlacement!.coords.x,
       this.imgPlacement!.coords.y,
       this.imgPlacement!.size.width,
@@ -1341,9 +1538,6 @@ private _drawNorthArrow(): void {
         { baseline: 'hanging' },
       );
     }
-    if (this.scale) {
-      console.log("sasdsafdsdfsdf");
-    }
     if (this.mapInfo) {
       this._setTextStyle('info');
       // -1 line height in y because of map info header
@@ -1353,19 +1547,6 @@ private _drawNorthArrow(): void {
         this.mapInfoPlacement!.coords.y + this._calcTotalLineHeight(1),
         { baseline: 'hanging' },
       );
-      const heightOffset =
-        (this.pdfDoc.getLineHeight() * (this.mapInfo.text.length + 1)) /
-        JSPDF_PPI;
-      if (this.mapLink) {
-        this.pdfDoc.textWithLink(
-          translate('print.pdf.mapLinkText'),
-          this.mapInfoPlacement!.coords.x,
-          this.mapInfoPlacement!.coords.y +
-            this._calcTotalLineHeight(1) +
-            heightOffset,
-          { baseline: 'hanging', url: this.mapLink },
-        );
-      }
       this.pdfDoc.setFont(this.font, 'normal', fontWeights.BOLD);
       this.pdfDoc.text(
         this.mapInfo.header,
@@ -1374,10 +1555,34 @@ private _drawNorthArrow(): void {
         { baseline: 'hanging' },
       );
 
-      // Maßstabsbalken und Nordpfeil als Grafikzeile unterhalb des Textes
-      // der Karteninformation-Box (siehe _calcMapInfoPlacement).
+      // Maßstabsbalken und Nordpfeil als Grafikzeile direkt unterhalb des
+      // tatsächlichen Textendes der Karteninformation-Box (siehe
+      // _calcMapInfoGraphicsRowY).
       this._drawScaleBar();
       this._drawNorthArrow();
+
+      // Kartenlink als unterste Information der Karteninformation-Box,
+      // unterhalb von Maßstabsbalken und Nordpfeil.
+      if (this.mapLink) {
+        this._setTextStyle('info');
+        let linkY =
+          this._calcMapInfoGraphicsRowY() +
+          this.northArrowHeight;
+
+        if (this.contact && this.contactPlacement) {
+          const contactBottom =
+            this.contactPlacement.coords.y +
+            this._calcTotalLineHeight(this.contact.text.length + 1);
+
+          linkY = contactBottom - this._calcTotalLineHeight(1);
+        }
+        this.pdfDoc.textWithLink(
+          translate('print.pdf.mapLinkText'),
+          this.mapInfoPlacement!.coords.x,
+          linkY,
+          { baseline: 'hanging', url: this.mapLink },
+        );
+      }
     }
 
     if (this.description) {
@@ -1387,8 +1592,8 @@ private _drawNorthArrow(): void {
           this.description,
           this.descriptionPlacement!.coords.x,
           this.imgPlacement!.coords.y +
-            this.imgPlacement!.size.height +
-            this.formatting.elementMargin,
+          this.imgPlacement!.size.height +
+          this.formatting.elementMargin,
           { baseline: 'hanging' },
         );
       } else {
