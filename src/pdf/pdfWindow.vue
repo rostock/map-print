@@ -941,7 +941,6 @@ function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
       return { type: 'wms', ...parseWmsGetMapUrl(replacedUrl) };
     }
   }
-  
   return undefined;
 }
 
