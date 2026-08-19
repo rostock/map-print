@@ -178,6 +178,7 @@
   import { useI18n } from 'vue-i18n';
   import type { VcsUiApp } from '@vcmap/ui';
   import {
+    downloadURI,
     getLegendEntries,
     getPluginAssetUrl,
     NotificationType,
@@ -190,7 +191,7 @@
     VcsTextField,
     getColorByKey, 
   } from '@vcmap/ui';
-  import { OpenlayersMap, VectorLayer } from '@vcmap/core';
+  import { OpenlayersMap, VectorLayer, WMSLayer, WMTSLayer } from '@vcmap/core';
   import {
     VCol,
     VDivider,
@@ -209,12 +210,17 @@
   import { Style, Stroke, Circle as CircleStyle, Fill } from 'ol/style';
   import type { Coordinate } from 'ol/coordinate';
   import type { Pixel } from 'ol/pixel';
+  import type BaseLayer from 'ol/layer/Base';
   import type OLMap from 'ol/Map';
   import type MapBrowserEvent from 'ol/MapBrowserEvent';
   import { getLogger } from '@vcsuite/logger';
+  import type { Extent } from 'ol/extent';
+  import { transform } from 'ol/proj';
   import type { PrintPlugin } from '../index.js';
   import type { CanvasAndPlacement, Size } from './pdfCreator.js';
   import PDFCreator from './pdfCreator.js';
+  import PrintCompositor from './printCompositor.js';
+  import type { PrintLayer } from './printCompositor.js';
   import createAndHandleBlob from '../screenshot/shootScreenAndHandle.js';
   import {
     getLogo,
@@ -230,6 +236,7 @@
     LegendOrientationOptions,
     OrientationOptions,
   } from '../common/configManager.js';
+  import type { PrintUrlPattern } from '../common/configManager.js';
   import { getMapElement, getMapSize } from '../common/util.js';
   import { name } from '../../package.json';
 
@@ -368,11 +375,11 @@
       /**
        * Vom Nutzer frei eingebbarer Ziel-Druckmaßstab (Nenner, z.B. 1000 für
        * "1:1.000"). Bestimmt zusammen mit selectedImageSize die Größe des
-       * Druckbereich-Rechtecks — verändert dabei NICHT das Zoomlevel/die
-       * Resolution der Kartenansicht; die Karte wird nur ganz kurz beim
-       * eigentlichen Druckvorgang (createPdf -> alignViewToPrintArea)
-       * temporär ausgerichtet und danach wieder auf den ursprünglichen
-       * Zustand zurückgesetzt.
+       * Druckbereich-Rechtecks (rectState/bbox) — verändert dabei NICHT das
+       * Zoomlevel/die Resolution der Live-Kartenansicht: das Druckbild wird
+       * über PrintCompositor direkt aus BBox/Maßstab/Pixelgröße erzeugt
+       * (siehe createPdf -> buildPrintLayers), die Live-Ansicht bleibt
+       * währenddessen komplett unangetastet.
        */
       const printScale = ref<number>(1000);
 
@@ -478,7 +485,6 @@
 
       /** Liefert die geschlossenen Eckpunkte des um state.rotation rotierten Rechtecks. */
       function getRectangleCoordinates(s: PrintAreaState): Coordinate[] {
-        console.log("S:", s);
         const halfWidth = s.width / 2;
         const halfHeight = s.height / 2;
         const corners: Coordinate[] = [
@@ -487,14 +493,12 @@
           [halfWidth, halfHeight],
           [-halfWidth, halfHeight],
         ];
-        console.log("Corners:", corners);
         const cos = Math.cos(s.rotation);
         const sin = Math.sin(s.rotation);
         const rotated = corners.map<Coordinate>(([x, y]) => [
           s.center[0] + x * cos - y * sin,
           s.center[1] + x * sin + y * cos,
         ]);
-        console.log("KA:", [...rotated, rotated[0]]);
         return [...rotated, rotated[0]];
       }
 
@@ -558,7 +562,6 @@
 
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
-        console.log(getColorByKey(app, 'background'));
         const primary = getColorByKey(app, 'primary');
         const secondary = getColorByKey(app, 'secondary');
         const background = getColorByKey(app, 'background');
@@ -845,164 +848,184 @@
       }
 
       /**
-       * Schneidet aus dem vollflächigen Karten-Screenshot (`sourceCanvas`,
-       * i.d.R. mit höherer Auflösung als das DOM-Element gerendert, für die
-       * gewünschte Druck-PPI) genau den Bereich aus, der dem
-       * Druckbereich-Rechteck entspricht — inkl. eventueller Rest-Rotation
-       * (siehe computePrintAreaScreenRegion). `region` ist in DOM-Pixeln des
-       * Karten-Elements angegeben und wird proportional auf die tatsächliche
-       * Canvas-Größe skaliert.
+       * Zerlegt eine vollstaendige WMS-GetMap-URL (inkl. Query-String) in
+       * die Felder von WmsPrintLayer. SRS/CRS/BBOX/WIDTH/HEIGHT werden
+       * bewusst NICHT uebernommen -- die setzt PrintCompositor bei jeder
+       * Anfrage ohnehin frisch aus der tatsaechlichen Ziel-BBox/Projektion,
+       * ein in der Config fest hinterlegter Wert waere hoechstens ein
+       * Platzhalter. Alle uebrigen Parameter (z.B. TRANSPARENT, STYLES,
+       * Vendor-Parameter) werden uebernommen und ueberschreiben beim
+       * spaeteren GetMap-Aufruf die Defaults.
        */
-      function cropRotatedCanvasToPrintArea(
-        sourceCanvas: HTMLCanvasElement,
-        domSize: Size,
-        region: {
-          centerPixel: { x: number; y: number };
-          widthPixel: number;
-          heightPixel: number;
-          rotation: number;
-        },
-      ): HTMLCanvasElement {
-        const scaleX = sourceCanvas.width / domSize.width;
-        const scaleY = sourceCanvas.height / domSize.height;
-
-        const target = document.createElement('canvas');
-        target.width = Math.round(region.widthPixel * scaleX);
-        target.height = Math.round(region.heightPixel * scaleY);
-        const ctx = target.getContext('2d');
-        if (!ctx) {
-          return sourceCanvas;
-        }
-
-        // Ursprung in die Zielmitte legen, die gemessene Bildschirm-Rotation
-        // rückgängig machen, dann so verschieben, dass der Rechteck-
-        // Mittelpunkt (in Canvas-Pixeln) auf dem neuen Ursprung liegt — und
-        // das komplette Quellbild zeichnen. Nur der Teil innerhalb der
-        // Zielgröße bleibt sichtbar (= der Zuschnitt).
-        ctx.save();
-        ctx.translate(target.width / 2, target.height / 2);
-        ctx.rotate(-region.rotation);
-        ctx.translate(
-          -region.centerPixel.x * scaleX,
-          -region.centerPixel.y * scaleY,
-        );
-        ctx.drawImage(sourceCanvas, 0, 0);
-        ctx.restore();
-
-        // gibt den zu druckenden Kartenbereich aus
-        // console.log('crop debug', target.toDataURL('image/png')); // PNG behält Transparenz sichtbar
-        
-
-        return target;
-      }
-
-      /**
-       * Ermittelt, wo das Druckbereich-Rechteck NACH dem Ausrichten der View
-       * (alignViewToPrintArea) tatsächlich auf dem Bildschirm liegt — in
-       * DOM-Pixeln, inkl. tatsächlicher Rotation relativ zur Bildschirmachse.
-       * Bewusst eine MESSUNG (via getPixelFromCoordinate) statt einer
-       * Annahme: ob view.setRotation() die Rechteck-Rotation exakt aufhebt,
-       * hängt von Vorzeichen-/Konventionsdetails ab, die hier nicht
-       * unterstellt werden — das tatsächliche Ergebnis wird stattdessen
-       * direkt aus der realen Projektion der vier Rechteck-Ecken abgelesen,
-       * damit der Zuschnitt (cropRotatedCanvasToPrintArea) immer korrekt
-       * ausgerichtet ist, unabhängig von dieser Konvention.
-       */
-      function computePrintAreaScreenRegion(map: OpenlayersMap):
-        | {
-            centerPixel: { x: number; y: number };
-            widthPixel: number;
-            heightPixel: number;
-            rotation: number;
+      function parseWmsGetMapUrl(fullUrl: string): Omit<WmsPrintLayer, 'type'> {
+        const parsed = new URL(fullUrl);
+        const params: Record<string, string> = {};
+        let layers = '';
+        let version = '1.3.0';
+        let format = 'image/png';
+        const skip = new Set([
+          'SERVICE',
+          'REQUEST',
+          'SRS',
+          'CRS',
+          'BBOX',
+          'WIDTH',
+          'HEIGHT',
+        ]);
+        parsed.searchParams.forEach((value, key) => {
+          const upperKey = key.toUpperCase();
+          if (upperKey === 'LAYERS') {
+            layers = value;
+          } else if (upperKey === 'VERSION') {
+            version = value;
+          } else if (upperKey === 'FORMAT') {
+            format = value;
+          } else if (!skip.has(upperKey)) {
+            params[upperKey] = value;
           }
-        | undefined {
-        if (!printAreaState) {
-          return undefined;
-        }
-        // Die ersten 4 (von 5, der letzte schließt den Ring) Eckpunkte des
-        // Rechtecks in Kartenkoordinaten, in Reihenfolge
-        // [-halfW,-halfH] -> [halfW,-halfH] -> [halfW,halfH] -> [-halfW,halfH].
-        const corners = getRectangleCoordinates(printAreaState).slice(0, 4);
-        const pixelCorners = corners.map((coord) =>
-          map.olMap.getPixelFromCoordinate(coord),
-        );
-        if (pixelCorners.some((pixel) => !pixel)) {
-          return undefined;
-        }
-        const [p0, p1, p2] = pixelCorners as Pixel[];
-
+        });
         return {
-          centerPixel: {
-            x: (p0[0] + p2[0]) / 2,
-            y: (p0[1] + p2[1]) / 2,
-          },
-          widthPixel: Math.hypot(p1[0] - p0[0], p1[1] - p0[1]),
-          heightPixel: Math.hypot(p2[0] - p1[0], p2[1] - p1[1]),
-          // Tatsächliche Bildschirm-Rotation des Rechtecks, gemessen (nicht
-          // angenommen) — in Canvas-Rotationskonvention (y-Achse zeigt nach
-          // unten), passend zu ctx.rotate() in cropRotatedCanvasToPrintArea.
-          rotation: Math.atan2(p1[1] - p0[1], p1[0] - p0[0]),
+          url: `${parsed.origin}${parsed.pathname}`,
+          layers,
+          version,
+          format,
+          params,
         };
       }
 
       /**
-       * Richtet die Kartenansicht temporär exakt auf das Druckbereich-Rechteck
-       * aus (Zentrum, Rotation, sowie eine Resolution, die das Rechteck
-       * vollständig und unbeschnitten im Viewport zeigt — reine
-       * Screenshot-Qualität/Framing) und liefert eine Restore-Funktion, um
-       * die View danach wieder auf ihren ursprünglichen Zustand
-       * zurückzusetzen. Gibt `undefined` zurück, wenn kein Rechteck aktiv
-       * ist (z.B. 3D-/Oblique-Karte). Die tatsächliche Crop-Region wird NICHT
-       * hier zurückgegeben, sondern separat per computePrintAreaScreenRegion
-       * gemessen, nachdem die View ausgerichtet wurde (siehe createPdf) —
-       * damit ist der Zuschnitt korrekt, selbst wenn view.setRotation() die
-       * Rechteck-Rotation nicht exakt aufhebt.
+       * Prueft eine Liste von Kandidaten-URLs gegen config.pattern und
+       * baut bei einem Treffer einen WmsPrintLayer -- damit landet der
+       * Layer im selben, bereits vorhandenen WMS-Zweig wie echte
+       * WMS-Layer, es entsteht kein separater Handler. Es zaehlt der
+       * erste Treffer ueber alle Kandidaten-URLs hinweg.
        */
-      function alignViewToPrintArea(
-        map: OpenlayersMap,
-        domSize: Size,
-      ): { restore: () => void } | undefined {
-        if (!printAreaState) {
-          return undefined;
-        }
-        const view = map.olMap.getView();
-        const originalCenter = view.getCenter();
-        const originalResolution = view.getResolution();
-        const originalRotation = view.getRotation();
+      // Zur Veranschaulichung: Das Interface für dein Pattern-Objekt sieht jetzt in etwa so aus:
+// interface PrintUrlPattern {
+//   name?: string;
+//   pattern: string[]; // <-- Hier jetzt ein Array statt einem einzelnen String
+//   replacement: string;
+//   completeUrl?: boolean;
+// }
 
-        const rectState = printAreaState;
+function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
+  console.log("Pattern");
+  console.log(config.pattern);
+  const patterns = (config.pattern ?? []) as PrintUrlPattern[];
 
-        // Resolution so wählen, dass das Rechteck in beiden Dimensionen
-        // vollständig sichtbar ist (kein Beschnitt), unabhängig vom
-        // Seitenverhältnis des Karten-Elements. Bewusst die knappe
-        // (scharfe) Berechnung, keine pauschale Sicherheitsmarge: Eine evtl.
-        // verbleibende Rest-Rotation (falls view.setRotation() die
-        // Rechteck-Rotation nicht exakt aufhebt) wird NICHT hier
-        // vorsorglich einkalkuliert, sondern nach dem Rendern tatsächlich
-        // GEMESSEN und nur bei Bedarf gezielt nachkorrigiert (siehe
-        // createPdf, direkt nach computePrintAreaScreenRegion) — damit
-        // bleibt die Auflösung im (üblichen) Normalfall unangetastet und
-        // scharf.
-        const resolution = Math.max(
-          rectState.width / domSize.width,
-          rectState.height / domSize.height,
-        );
+  for (const url of urls) {
+    if (!url) {
+      continue;
+    }
 
-        view.setRotation(rectState.rotation);
-        view.setCenter(rectState.center);
-        view.setResolution(resolution);
+    // 1. ANPASSUNG: Prüfe, ob ALLE Strings aus dem pattern-Array in der URL vorkommen
+    const match = patterns.find((p) => 
+      p.pattern.every((searchString) => url.includes(searchString))
+    );
 
-        return {
-          restore: (): void => {
-            view.setRotation(originalRotation ?? 0);
-            if (originalCenter) {
-              view.setCenter(originalCenter);
+    if (match) {
+      let replacedUrl = url;
+
+      // 2. ANPASSUNG: Die Ersetzungslogik
+      if (match.completeUrl) {
+        // Die gesamte URL wird durch das Replacement ersetzt (wie in deiner Config gewünscht)
+        replacedUrl = match.replacement;
+      } else {
+        // Falls completeUrl false ist: Wir gehen alle Strings im Array durch 
+        // und ersetzen sie in der URL. 
+        match.pattern.forEach((searchString) => {
+          replacedUrl = replacedUrl.replace(searchString, match.replacement);
+        });
+      }
+
+      return { type: 'wms', ...parseWmsGetMapUrl(replacedUrl) };
+    }
+  }
+  
+  return undefined;
+}
+
+      /**
+       * Baut die für PrintCompositor benötigte Layer-Liste aus den aktiven
+       * Layern der Karte, in Zeichenreihenfolge (zIndex). Der interne
+       * Druckbereich-Rechteck-Hilfslayer (printAreaLayerName) wird
+       * ausgeschlossen, da er nur eine UI-Hilfe ist, kein Karteninhalt.
+       *
+       * Reihenfolge pro Layer: 1) config.pattern-Treffer (schneller,
+       * robusterer WMS-Weg fuer bekannte Dienste) -- 2) WMS -- 3) WMTS/
+       * Vektor ueber Offscreen-Rendering als allgemeiner Fallback.
+       *
+       * Fuer den Pattern-Abgleich werden zwei Kandidaten-URLs gesammelt:
+       * layer.url (funktioniert fuer WMS zuverlaessig) UND -- falls
+       * vorhanden -- die tatsaechlichen Tile-URLs der zugrundeliegenden
+       * OL-Quelle (source.getUrls()). Grund: bei REST-WMTS-Layern
+       * (URL-Template mit Platzhaltern wie {TileMatrix}/{TileRow}/
+       * {TileCol}) liegt die eigentliche URL haeufig NICHT in layer.url
+       * (das waere dann leer), sondern nur in der OL-Quelle -- ein reiner
+       * Abgleich gegen layer.url wuerde dort nie treffen.
+       *
+       * ACHTUNG: getImplementationsForMap(activeMap)/getOLLayer() sind
+       * über die @vcmap/core-Doku bestätigt (LayerOpenlayersImpl-
+       * Basisklasse); je nachdem, wie Messungen/Zeichnungen bei euch
+       * verwaltet werden, muss dieser Zweig ggf. trotzdem angepasst
+       * werden.
+       */
+      function buildPrintLayers(activeMap: OpenlayersMap): PrintLayer[] {
+        return [...app.layers]
+          .filter(
+            (layer) => layer.active && layer.name !== printAreaLayerName,
+          )
+          .sort((a, b) => a.zIndex - b.zIndex)
+          .flatMap((layer): PrintLayer[] => {
+            const [impl] = layer.getImplementationsForMap?.(activeMap) ?? [];
+            const olLayer = (
+              impl as { getOLLayer?: () => BaseLayer } | undefined
+            )?.getOLLayer?.();
+            const source = (
+              olLayer as { getSource?: () => unknown } | undefined
+            )?.getSource?.();
+            const sourceUrls =
+              (
+                source as { getUrls?: () => string[] | null } | undefined
+              )?.getUrls?.() ?? [];
+            const candidateUrls = [layer.url, ...sourceUrls];
+            console.log(config);
+            // TEMPORÄR zum Debuggen -- zeigt genau, wogegen der Pattern-
+            // Abgleich fuer diesen Layer prueft.
+            console.log('PrintCompositor candidateUrls', layer.name, candidateUrls);
+
+            const patched = matchUrlPattern(candidateUrls);
+            console.log(patched);
+            if (patched) {
+              return [patched];
             }
-            if (originalResolution !== undefined) {
-              view.setResolution(originalResolution);
+            if (layer instanceof WMSLayer) {
+              console.log("Layer ist WMS");
+              return [
+                {
+                  type: 'wms',
+                  url: layer.url,
+                  layers: layer.getLayers().join(','),
+                  version: layer.version,
+                  params: layer.parameters,
+                },
+              ];
             }
-          },
-        };
+            // WMTS und Vektor-Layer haben beide bereits eine fertige
+            // OL-Implementierung fuer die aktive Karte (LayerOpenlayersImpl
+            // -- gemeinsame Basisklasse von WmtsOpenlayersImpl UND
+            // VectorOpenlayersImpl -- stellt dafuer getOLLayer() bereit) --
+            // werden daher beide ueber denselben Offscreen-Kartenmechanismus
+            // in PrintCompositor gerendert statt ueber einen eigenen Abruf
+            // wie bei WMS (WMTS braeuchte dafuer die komplette Tile-Matrix/
+            // Kachelraster-Logik, die OL hier stattdessen selbst
+            // uebernimmt). olLayer wurde oben schon fuer den
+            // Pattern-Abgleich geholt, hier direkt weiterverwendet.
+            if (layer instanceof WMTSLayer || layer instanceof VectorLayer) {
+              return olLayer ? [{ type: 'vector', olLayer }] : [];
+            }
+            return [];
+          });
       }
 
       /** Creates pdf by utilizing the PDFCreator. Handling is done by default function in shootScreenAndHandle.js */
@@ -1012,75 +1035,30 @@
         const mapElement = getMapElement(activeMap);
         const mapSize = getMapSize(activeMap);
 
-        // Die Rotation des Druckbereichs muss VOR dem Ausrichten bzw.
-        // Zoomen der Kartenansicht gespeichert werden. Nach
-        // alignViewToPrintArea() ist die Druckbereichsrotation in der
-        // Bildschirmansicht bereits weitgehend aufgehoben.
-        const printAreaRotation = printAreaState?.rotation ?? 0;
-
-        // Kartenansicht ggf. auf das Druckbereich-Rechteck ausrichten, damit
-        // nur der durch das Rechteck vorgegebene Ausschnitt gedruckt wird.
-        // Die tatsächliche Bildschirm-Region (inkl. Rotation) wird danach
-        // GEMESSEN, nicht angenommen — siehe computePrintAreaScreenRegion.
-        let printAreaAlignment: { restore: () => void } | undefined;
-        let printAreaScreenRegion:
-          | ReturnType<typeof computePrintAreaScreenRegion>
-          | undefined;
-        if (activeMap instanceof OpenlayersMap) {
-          printAreaAlignment = alignViewToPrintArea(activeMap, mapSize);
-          if (printAreaAlignment) {
-            await waitForRenderComplete(activeMap);
-            printAreaScreenRegion = computePrintAreaScreenRegion(activeMap);
-
-            // Falls view.setRotation() die Rechteck-Rotation nicht exakt
-            // aufhebt, kann die tatsächliche (jetzt gemessene) achsen-
-            // parallele Bounding-Box des Rechtecks größer als mapSize sein
-            // — seine Ecken lägen dann außerhalb des gerenderten Bereichs,
-            // und cropRotatedCanvasToPrintArea würde dort leeren/fehlenden
-            // Inhalt in den Ausschnitt ziehen (wirkt dann gestaucht/
-            // verzerrt). Deshalb hier gezielt prüfen und nur bei
-            // tatsächlichem Bedarf nachzoomen — nicht pauschal, damit die
-            // Auflösung im Normalfall (keine oder vernachlässigbare
-            // Rest-Rotation) scharf bleibt.
-            if (printAreaScreenRegion) {
-              const { widthPixel, heightPixel, rotation } =
-                printAreaScreenRegion;
-              const bboxWidth =
-                widthPixel * Math.abs(Math.cos(rotation)) +
-                heightPixel * Math.abs(Math.sin(rotation));
-              const bboxHeight =
-                widthPixel * Math.abs(Math.sin(rotation)) +
-                heightPixel * Math.abs(Math.cos(rotation));
-
-              const overflowScale = Math.max(
-                bboxWidth / mapSize.width,
-                bboxHeight / mapSize.height,
-              );
-
-              // Kleine Toleranz gegen Float-/Messungenauigkeiten, damit im
-              // Normalfall kein unnötiger zweiter Render-Durchlauf anfällt.
-              if (overflowScale > 1.001) {
-                const view = activeMap.olMap.getView();
-                const currentResolution = view.getResolution() ?? 1;
-                // 1% Sicherheitszuschlag obendrauf, um Rundungsfehler beim
-                // erneuten Messen sicher abzudecken.
-                view.setResolution(currentResolution * overflowScale * 1.01);
-                await waitForRenderComplete(activeMap);
-                printAreaScreenRegion =
-                  computePrintAreaScreenRegion(activeMap);
-              }
+        // Ziel-Pixelgroesse des Druckbereichs -- direkt aus dem gewaehlten
+        // Papierformat/Orientierung (dieselbe Quelle wie
+        // computePrintAreaSize(): selectedImageSize) und der gewaehlten
+        // Druckaufloesung (PPI) abgeleitet. Bewusst UNABHAENGIG von der
+        // aktuellen Fenster-/Kartenpanel-Groesse im Browser -- die Zoomstufe
+        // ist damit direkt an den gewuenschten Maszstab gekoppelt.
+        const targetImageSize = selectedImageSize.value;
+        const targetPixelSize: Size | undefined = targetImageSize
+          ? {
+              width: targetImageSize.width * state.selectedPpi,
+              height: targetImageSize.height * state.selectedPpi,
             }
-          }
-        }
+          : undefined;
+
+        const printAreaRotation = printAreaState?.rotation ?? 0;
 
         // Bei aktivem Druckbereich-Rechteck entspricht der gedruckte
         // Maßstab exakt printScale (die Rechteck-Größe wurde ja danach
         // berechnet) — ansonsten der bereits reaktiv gepflegte Maßstab der
         // vollen, unbeschnittenen Kartenansicht.
         const scale =
-          is2DMap.value && (printAreaScreenRegion || currentScale.value)
+          is2DMap.value && (printAreaState || currentScale.value)
             ? t('print.pdf.scale', {
-                scale: printAreaScreenRegion
+                scale: printAreaState
                   ? formatScaleDenominator(printScale.value)
                   : currentScale.value,
               })
@@ -1088,19 +1066,16 @@
 
         // Numerischer Maßstab für den grafischen Maßstabsbalken — dieselbe
         // Quelle wie oben, nur unformatiert.
-        const scaleDenominatorValue = printAreaScreenRegion
+        const scaleDenominatorValue = printAreaState
           ? printScale.value
           : activeMap instanceof OpenlayersMap
             ? computeCurrentScaleDenominator(activeMap)
             : undefined;
 
         // Rotation für den Nordpfeil: dieselbe Rotation, mit der auch der
-        // Kartenausschnitt beim Zuschneiden entdreht wird (siehe
-        // cropRotatedCanvasToPrintArea) — mit umgekehrtem Vorzeichen, siehe
-        // Herleitung im Kommentar von PDFCreator._drawNorthArrow().
-        //const northArrowRotationValue = printAreaScreenRegion
-        //  ? -printAreaScreenRegion.rotation
-        //  : 0;
+        // Kartenausschnitt bei PrintCompositor entdreht wird — mit
+        // umgekehrtem Vorzeichen, siehe Herleitung im Kommentar von
+        // PDFCreator._drawNorthArrow().
         const northArrowRotationValue =
           activeMap instanceof OpenlayersMap
             ? -printAreaRotation
@@ -1274,69 +1249,111 @@
             const width =
               pdfCreator.imgPlacement!.size.width * state.selectedPpi;
 
-            const baseCreateFn = printAreaScreenRegion
-              ? async (
-                  canvas: HTMLCanvasElement,
-                  translate: (s: string) => string,
-                ): Promise<Blob> => {
-                  console.log('crop debug full', {
-        canvasW: canvas.width, canvasH: canvas.height,
-        mapSizeW: mapSize.width, mapSizeH: mapSize.height,
-        regionW: printAreaScreenRegion!.widthPixel, regionH: printAreaScreenRegion!.heightPixel,
-        scaleX: canvas.width / mapSize.width,
-        scaleY: canvas.height / mapSize.height,
-      });
-      console.log('full scale debug', {
-  printScaleInput: printScale.value,
-  printAreaWidthM: printAreaState!.width,
-  printAreaHeightM: printAreaState!.height,
-  viewResolution: (activeMap as OpenlayersMap).olMap.getView().getResolution(),
-  mapSizeW: mapSize.width, mapSizeH: mapSize.height,
-  regionW: printAreaScreenRegion!.widthPixel, regionH: printAreaScreenRegion!.heightPixel,
-  canvasW: canvas.width, canvasH: canvas.height,
-  imgPlacementW: pdfCreator.imgPlacement!.size.width,
-  imgPlacementH: pdfCreator.imgPlacement!.size.height,
-});
-                  const cropped = cropRotatedCanvasToPrintArea(
-                    canvas,
-                    mapSize,
-                    printAreaScreenRegion!,
-                  );
-                  return pdfCreator.create(cropped, translate);
-                }
-              : pdfCreator.create.bind(pdfCreator);
+            if (
+              printAreaState &&
+              activeMap instanceof OpenlayersMap &&
+              targetPixelSize
+            ) {
+              // Druckbereich-Rechteck aktiv: Kartenbild wird direkt aus
+              // WMS-GetMap-Anfragen und Vektor-Layern zusammengesetzt
+              // (PrintCompositor) statt aus einem Live-Screenshot — die
+              // Druckbereich-Rechteck-UI (printAreaLayer) muss dafür auch
+              // nicht mehr aus-/eingeblendet werden, sie würde in einem
+              // PrintCompositor-Bild ohnehin nie auftauchen.
+              //
+              // HINWEIS: overlayWindows (Swipe-Tool-/FeatureInfo-Overlays)
+              // werden auf diesem Weg aktuell NICHT mit eingedruckt — deren
+              // Positionierung basiert auf CSS-Pixel-Ratio-Koordinaten
+              // relativ zum Live-Viewport, während PrintCompositor ein vom
+              // Viewport unabhängiges Bild erzeugt. Müsste bei Bedarf
+              // separat gelöst werden.
+              // Live-Render-Projektion der Karte (z.B. EPSG:3857 /
+              // Web-Mercator -- hat einen breitengradabhaengigen
+              // Skalenfaktor von 1/cos(Breite), in Rostock ~1,7x). Ein
+              // Screenshot dieser Ansicht traegt diese Verzerrung immer im
+              // Bildinhalt mit sich -- printAreaState.width/height sind
+              // zwar bereits echte, verzerrungsfreie Meterwerte (aus
+              // printScale berechnet, siehe computePrintAreaSize), wuerden
+              // aber als 3857-Koordinatendifferenz falsch interpretiert.
+              const mapProjection = activeMap.olMap.getView().getProjection();
 
-            // Rechteck/Rotationsgriff dürfen nicht mit aufs gedruckte Bild —
-            // sobald der Screenshot als Canvas vorliegt, ist das Ausblenden
-            // nicht mehr nötig und wird sofort wieder rückgängig gemacht
-            // (nicht erst nach der kompletten PDF-Erstellung, um die
-            // Ausblend-Dauer für den Nutzer so kurz wie möglich zu halten).
-            const createFn = async (
-              canvas: HTMLCanvasElement,
-              translate: (s: string) => string,
-            ): Promise<Blob> => {
-              printAreaLayer?.activate().catch((error: unknown) => {
-                getLogger(plugin.name).error(
-                  `Reactivating print-area layer failed: ${error as string}`,
-                );
+              // config.printEPSG (z.B. 'EPSG:25833', UTM) ist eine
+              // weitgehend verzerrungsfreie Projektion, in der 1
+              // Koordinateneinheit (nahezu) 1 echtem Meter entspricht --
+              // dort koennen width/height direkt als Meter verwendet
+              // werden. Nur das Zentrum muss dafuer reprojiziert werden;
+              // Breite/Höhe bleiben unveraendert. Ohne konfiguriertes
+              // printEPSG bleibt das bisherige Verhalten (Live-Projektion)
+              // erhalten.
+              // HINWEIS: die Rotation wird unveraendert uebernommen --
+              // Web-Mercator hat ueberall exakt geografisch Nord als
+              // "oben", UTM weicht davon je nach Lage zum Zonen-
+              // Mittelmeridian um einen kleinen Betrag ab
+              // (Meridiankonvergenz, für Rostock in EPSG:25833 im Bereich
+              // von grob 1-2°) -- für die meisten Drucke vernachlässigbar,
+              // aber nicht exakt null.
+              const printProjection = config.printEPSG ?? mapProjection;
+              const printCenter =
+                config.printEPSG && config.printEPSG !== mapProjection.getCode()
+                  ? transform(
+                      printAreaState.center,
+                      mapProjection,
+                      config.printEPSG,
+                    )
+                  : printAreaState.center;
+
+              const bbox: Extent = [
+                printCenter[0] - printAreaState.width / 2,
+                printCenter[1] - printAreaState.height / 2,
+                printCenter[0] + printAreaState.width / 2,
+                printCenter[1] + printAreaState.height / 2,
+              ];
+              const layers = buildPrintLayers(activeMap);
+
+              const compositor = new PrintCompositor();
+              const canvas = await compositor.compose(layers, {
+                bbox,
+                rotation: printAreaState.rotation,
+                pixelSize: targetPixelSize,
+                projection: printProjection,
+                sourceProjection: mapProjection,
               });
-              return baseCreateFn(canvas, translate);
-            };
 
-            printAreaLayer?.deactivate();
-            if (activeMap instanceof OpenlayersMap) {
-              // Sicherstellen, dass das Ausblenden im nächsten Render-Zyklus
-              // auch tatsächlich im Bild ankommt, bevor der Screenshot startet.
-              await waitForRenderComplete(activeMap);
+              const blob = await pdfCreator.create(canvas, (s) =>
+                app.vueI18n.t(s),
+              );
+              const url = URL.createObjectURL(blob);
+              downloadURI(url, 'map.pdf');
+              URL.revokeObjectURL(url);
+            } else {
+              // Kein Druckbereich-Rechteck aktiv (z.B. 3D-/Oblique-Karte,
+              // oder Druck ohne definiertes Rechteck): bisheriger Weg über
+              // einen Live-Screenshot der aktuell sichtbaren Kartenansicht.
+              const createFn = async (
+                canvas: HTMLCanvasElement,
+                translate: (s: string) => string,
+              ): Promise<Blob> => {
+                printAreaLayer?.activate().catch((error: unknown) => {
+                  getLogger(plugin.name).error(
+                    `Reactivating print-area layer failed: ${error as string}`,
+                  );
+                });
+                return pdfCreator.create(canvas, translate);
+              };
+
+              printAreaLayer?.deactivate();
+              if (activeMap instanceof OpenlayersMap) {
+                await waitForRenderComplete(activeMap);
+              }
+
+              await createAndHandleBlob(
+                app,
+                width,
+                createFn,
+                'map.pdf',
+                overlayWindows,
+              );
             }
-
-            await createAndHandleBlob(
-              app,
-              width,
-              createFn,
-              'map.pdf',
-              overlayWindows,
-            );
           })
           .catch((e: unknown) => {
             app.notifier.add({
@@ -1345,11 +1362,10 @@
             });
           })
           .finally(() => {
-           //printAreaAlignment?.restore();
-            // Sicherheitsnetz: falls createFn nie aufgerufen wurde (z.B.
-            // Fehler vor dem eigentlichen Screenshot), Layer trotzdem wieder
-            // einblenden. activate() auf einem bereits aktiven Layer ist
-            // ungefährlich (No-Op).
+            // Sicherheitsnetz: falls der Druckvorgang nie richtig durchlief
+            // (z.B. Fehler vor dem eigentlichen Rendern), Layer trotzdem
+            // wieder einblenden. activate() auf einem bereits aktiven Layer
+            // ist ungefährlich (No-Op).
             printAreaLayer?.activate().catch((error: unknown) => {
               getLogger(plugin.name).error(
                 `Reactivating print-area layer failed: ${error as string}`,

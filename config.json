@@ -46,5 +46,14 @@
     "name": "fira-sans",
     "regular": "plugin-assets/fonts/fira-sans.regular.ttf",
     "bold": "plugin-assets/fonts/fira-sans.bold.ttf"
-  }
+  },
+  "pattern":[
+    {
+      "name": "orkamv",
+      "pattern": ["geodienste/orkamv/service"],
+      "replacement": "https://www.orka-mv.de/geodienste/orkamv-mapserver_druck/wms?service=WMS&version=1.1.1&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=stadtplan&srs=EPSG:25833",
+      "completeUrl": true
+    }
+  ],
+  "printEPSG": 25833
 }

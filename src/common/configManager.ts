@@ -126,6 +126,37 @@ const imageSizeOptionKeysPattern: Record<string, Pattern> = {
   landscape: maybe(strict(mapAreaSizeKeysPattern)),
 };
 
+/**
+ * Eine URL-Ersetzungsregel für den Druck: wenn `pattern` als Teilstring in
+ * einer Layer-URL vorkommt, wird -- statt den Layer über seinen
+ * eigentlichen Typ zu behandeln -- daraus ein regulärer WMS-Layer gebaut
+ * (z.B. um einen WMTS-Dienst, der auch als WMS erreichbar ist, beim Druck
+ * über den robusteren, direkten WMS-Weg statt Offscreen-Rendering laufen
+ * zu lassen).
+ */
+export type PrintUrlPattern = {
+  /** Name/Bezeichner der Regel, nur zur Wiedererkennung in der Config. */
+  name: string;
+  /** Teilstring, nach dem in Layer-URLs gesucht wird. */
+  pattern: string;
+  /**
+   * Ersetzung: bei completeUrl=true die komplette neue GetMap-URL (inkl.
+   * Query-String), sonst nur der Ersatz für den gefundenen Teilstring
+   * innerhalb der bestehenden URL.
+   */
+  replacement: string;
+  /** Wenn true, wird die GESAMTE URL durch `replacement` ersetzt statt nur der gefundene Teilstring. */
+  completeUrl?: boolean;
+};
+
+/** Possible keys of a {@link PrintUrlPattern} with corresponding type. */
+const printUrlPatternKeysPattern: Record<string, Pattern> = {
+  name: String,
+  pattern: String,
+  replacement: String,
+  completeUrl: maybe(Boolean),
+};
+
 /** Configuration options of the print plugin. */
 export type PrintConfig = {
   /** List of page formates the user can select from. */
@@ -190,6 +221,21 @@ export type PrintConfig = {
   imageSizeList?: Array<ImageSizeOption>;
   /** The key of the default map-area size variant. Needs to be in imageSizeList. */
   imageSizeDefault?: string | undefined;
+  /**
+   * EPSG-Code der Projektion, in der gedruckt werden soll -- akzeptiert
+   * sowohl die blanke Zahl (z.B. 25833) als auch den vollen String (z.B.
+   * 'EPSG:25833'), unabhängig von der Live-Render-Projektion der Karte.
+   * Sinnvoll, wenn die Karte selbst in einer Projektion mit
+   * breitengradabhängiger Maßstabsverzerrung rendert (z.B. EPSG:3857 /
+   * Web-Mercator) -- ohne printEPSG würde der gedruckte Maßstab dann nicht
+   * stimmen. Ohne Angabe wird die Live-Projektion der Karte verwendet.
+   */
+  printEPSG?: number | string | undefined;
+  /**
+   * Regeln, um Layer-URLs vor dem Druck zu ersetzen (z.B. WMTS -> WMS für
+   * einen Dienst, der beides anbietet). Der erste Treffer gewinnt.
+   */
+  pattern?: Array<PrintUrlPattern>;
 };
 
 export type PrintState = {
@@ -204,6 +250,16 @@ export type PrintState = {
   /** The key of the currently selected map-area size variant (see {@link ImageSizeOption}), if any is applicable for selectedFormat. */
   selectedImageSize?: string;
 };
+
+/**
+ * Normalisiert einen EPSG-Code (blanke Zahl oder String) auf die volle
+ * 'EPSG:xxxx'-Form, wie sie OpenLayers/WMS erwarten. Ein bereits mit
+ * 'EPSG:' beginnender String bleibt unveraendert.
+ */
+function normalizeEpsgCode(value: number | string): string {
+  const raw = String(value).trim();
+  return raw.toUpperCase().startsWith('EPSG:') ? raw : `EPSG:${raw}`;
+}
 
 /**
  * Parses the default config as well as the custom map plugin config and merges them.
@@ -417,6 +473,25 @@ export function getConfigAndState(
     config.font || defaultOptions.font;
 
   /**
+   * EPSG-Code der Druck-Projektion, falls abweichend von der
+   * Live-Render-Projektion der Karte konfiguriert. Wird -- egal ob als
+   * blanke Zahl oder String angegeben -- immer auf die volle
+   * 'EPSG:xxxx'-Form normalisiert, wie sie OpenLayers/WMS erwarten.
+   * @example 'EPSG:25833'
+   */
+  const printEPSGRaw = config.printEPSG ?? defaultOptions.printEPSG;
+  const printEPSG: string | undefined =
+    printEPSGRaw !== undefined && printEPSGRaw !== ''
+      ? normalizeEpsgCode(printEPSGRaw)
+      : undefined;
+
+  /**
+   * Regeln, um Layer-URLs vor dem Druck zu ersetzen (z.B. WMTS -> WMS).
+   */
+  const pattern: Array<PrintUrlPattern> =
+    config.pattern || defaultOptions.pattern;
+
+  /**
    * The key of the default map-area size variant. Falls back to the first
    * variant matching formatDefault, if any.
    * @example 'A4'
@@ -454,6 +529,8 @@ export function getConfigAndState(
       font,
       imageSizeList,
       imageSizeDefault,
+      printEPSG,
+      pattern,
       // screenshot
       resolutionList,
       resolutionDefault,
@@ -531,6 +608,11 @@ export function validate(options: PrintConfig): void {
       options.imageSizeDefault,
       maybe(oneOf(...imageSizeList.map((option) => option.key))),
     );
+    // printEPSG akzeptiert bewusst number ODER string (siehe
+    // normalizeEpsgCode) -- mit den hier verfuegbaren Bausteinen (oneOf
+    // prueft Werte-, keine Typ-Alternativen) nicht sauber abbildbar, daher
+    // hier kein check() (wie bei charLimit oben ebenfalls schon der Fall).
+    check(options.pattern, maybe([strict(printUrlPatternKeysPattern)]));
   } catch (err) {
     getLogger(name).error('Invalid config', err);
   }

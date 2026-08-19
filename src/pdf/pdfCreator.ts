@@ -111,6 +111,15 @@ type PDFCreatorOptions = {
 
 const defaultOptions = getDefaultOptions();
 
+/**
+ * Rohes SVG-Markup des Nordpfeils, viewBox auf die Bounding Box des
+ * Pfades zugeschnitten (Original-viewBox war eine leere A4-Seite,
+ * 210x297mm, in der die Form nur einen kleinen Bereich einnahm). Wird
+ * von {@link PDFCreator._renderNorthArrow} zur Laufzeit rotiert
+ * gerastert.
+ */
+const NORTH_ARROW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="41 69 137 161"><path fill="#141414" d="M 46.238169,224.71279 C 72.181446,167.45124 108.38026,74.363002 109.38949,74.231023 c 0,0 63.49396,150.124917 63.1308,150.738087 -0.26682,0.45052 -63.14608,-52.84225 -63.14608,-52.84225 0,0 -63.652921,53.72678 -63.136041,52.58593 z m 63.113211,-58.87684 c 0.0918,0.0318 50.97763,42.48485 50.97763,42.48485 0,0 -50.77874,-121.654357 -50.93588,-121.654357 C 97.202088,115.19917 58.135598,208.38115 58.527254,208.36865 c 0.283928,-0.008 50.197296,-42.74996 50.824126,-42.5327 z m -0.0496,-5.04515 c -0.38104,-0.31271 0.21746,-62.467537 0.21746,-62.467537 0,0 38.01819,93.845587 37.63937,93.534707 z"/></svg>`;
+
 export default class PDFCreator {
   initialized = false;
 
@@ -217,6 +226,9 @@ export default class PDFCreator {
   /** Richtung von Norden nach oben auf der Seite (im Uhrzeigersinn, Bogenmaß) für den Nordpfeil. */
   northArrowRotation?: number;
 
+  /** Data-URL (PNG) des vorgerenderten, bereits rotierten Nordpfeils, siehe {@link _renderNorthArrow}. */
+  private northArrowImage?: string;
+
   /**
    * Höhe (in Zoll) der Grafikzeile mit Maßstabsbalken und Nordpfeil
    * innerhalb der Karteninformation-Box. Wird sowohl bei der
@@ -233,7 +245,9 @@ export default class PDFCreator {
   /**
    * Höhe (in Zoll) des Nordpfeils — doppelt so groß wie die nominelle
    * Grafikzeilen-Höhe ({@link mapInfoGraphicsHeight}), damit er deutlich
-   * sichtbarer ist. Da er dieselbe Höhe wie mapInfoGraphicsHeight
+   * sichtbarer ist. Da das gerasterte Nordpfeil-Bild quadratisch ist
+   * (siehe {@link _renderNorthArrow}), gilt width === height ===
+   * northArrowHeight. Da er dieselbe Höhe wie mapInfoGraphicsHeight
    * überragt, muss der Platz für nachfolgende Elemente (Kartenlink) auf
    * dieser (größeren) Höhe basieren, nicht auf mapInfoGraphicsHeight.
    */
@@ -247,7 +261,6 @@ export default class PDFCreator {
    * @param pdfCreatorOptions The params for PDFCreator setup wrapped in an object.
    */
   async setup(pdfCreatorOptions: PDFCreatorOptions): Promise<void> {
-    console.log(pdfCreatorOptions);
     if (pdfCreatorOptions.format !== defaultOptions.formatDefault) {
       this.formatting = Object.assign(
         pageStyles.default,
@@ -307,9 +320,12 @@ export default class PDFCreator {
     }
 
     if (pdfCreatorOptions.title) {
-      let width = this._calcElementWidth(
-        this.formatting[`title.widthPortion.${pdfCreatorOptions.orientation}`],
-      );
+      // Volle verfügbare Breite zwischen den Seitenrändern als
+      // Ausgangspunkt (statt eines festen Bruchteils via
+      // title.widthPortion) — die Titel-Spalte soll den gesamten Platz
+      // zwischen QR-Code und Logo ausfüllen, nicht nur einen
+      // konfigurierten Anteil davon.
+      let width = this.maxLineWidth;
       let x = this.formatting.pageMargins[3];
       // Spalte 1 (QR-Code): schiebt die Titel-Spalte nach rechts und
       // verkleinert ihre Breite um genau den belegten Platz.
@@ -346,6 +362,9 @@ export default class PDFCreator {
     }
     this.scaleDenominator = pdfCreatorOptions.scaleDenominator;
     this.northArrowRotation = pdfCreatorOptions.northArrowRotation;
+    this.northArrowImage = await this._renderNorthArrow(
+      this.northArrowRotation ?? 0,
+    );
 
     // Breite der Info-Spalten hängt nur von orientation/formatting ab, nicht
     // vom Inhalt — kann also vor der Höhenberechnung feststehen.
@@ -922,15 +941,6 @@ export default class PDFCreator {
   }
 
   /**
-   * Zeichnet einen klassischen kartografischen Maßstabsbalken (alternierend
-   * schwarz/weiß gefüllte Segmente mit sauberem Rahmen, Teilstrichen und
-   * Beschriftung in einheitlicher Einheit) als Teil der Karteninformation-Box
-   * (links neben dem Nordpfeil, siehe {@link _drawNorthArrow}) — ohne
-   * eigenen Hintergrund, da die Box bereits auf weißem Seitengrund liegt.
-   * Setzt `scaleDenominator` voraus (siehe {@link PDFCreatorOptions}) —
-   * ohne diesen Wert und ohne Karteninformation-Box wird nichts gezeichnet.
-   */
-  /**
    * Y-Position (oberer Rand) der Grafikzeile (Maßstabsbalken + Nordpfeil)
    * innerhalb der Karteninformation-Box: direkt unterhalb der letzten
    * tatsächlich gezeichneten Textzeile (Header + Infozeilen, deren letzte
@@ -949,6 +959,15 @@ export default class PDFCreator {
     );
   }
 
+  /**
+   * Zeichnet einen klassischen kartografischen Maßstabsbalken (alternierend
+   * schwarz/weiß gefüllte Segmente mit sauberem Rahmen, Teilstrichen und
+   * Beschriftung in einheitlicher Einheit) als Teil der Karteninformation-Box
+   * (links neben dem Nordpfeil, siehe {@link _drawNorthArrow}) — ohne
+   * eigenen Hintergrund, da die Box bereits auf weißem Seitengrund liegt.
+   * Setzt `scaleDenominator` voraus (siehe {@link PDFCreatorOptions}) —
+   * ohne diesen Wert und ohne Karteninformation-Box wird nichts gezeichnet.
+   */
   private _drawScaleBar(): void {
     if (!this.mapInfoPlacement || !this.scaleDenominator || !this.mapInfo) {
       return;
@@ -962,7 +981,11 @@ export default class PDFCreator {
     // damit sie unmittelbar über dem Balken steht (siehe
     // _calcMapInfoGraphicsRowY).
     const rowY = this._calcMapInfoGraphicsRowY();
-    const northArrowWidth = 0.17;
+    // Reservierter Platz für den Nordpfeil rechts vom Balken — entspricht
+    // der tatsächlichen (quadratischen) Breite des gerasterten Nordpfeils
+    // (siehe _renderNorthArrow/_drawNorthArrow), nicht mehr einem fest
+    // codierten, schmaleren Wert.
+    const northArrowWidth = this.northArrowHeight;
     const northArrowGap = 0.08;
 
     // Platz für die Einheit-Beschriftung nach dem Balkenende einkalkulieren.
@@ -1076,345 +1099,70 @@ export default class PDFCreator {
     this.pdfDoc.setLineWidth(0.006);
   }
 
- /**
- * Zeichnet einen zweifarbigen Nordpfeil auf Basis der
- * gelieferten SVG-Vorlage.
- *
- * Die Position und Größe entsprechen der bisherigen
- * Nordpfeil-Implementierung.
- *
- * - schwarze linke Hälfte
- * - weiße rechte Hälfte
- * - charakteristische Einkerbung am unteren Ende
- * - schlanke, nach oben zulaufende Pfeilform
- * - Rotation über northArrowRotation
- */
-private _drawNorthArrow(): void {
-  if (!this.imgPlacement) {
-    return;
+  /**
+   * Rendert die NORTH_ARROW_SVG rotiert auf ein quadratisches Canvas und
+   * gibt sie als PNG-Data-URL zurück. Das Canvas ist bewusst größer als
+   * die Zielgröße (Diagonale als Seitenlänge), damit beim Rotieren um den
+   * Mittelpunkt keine Ecken der Pfeilform abgeschnitten werden. Wird
+   * einmalig in {@link setup} aufgerufen und das Ergebnis in
+   * {@link northArrowImage} zwischengespeichert, damit {@link _drawNorthArrow}
+   * beim eigentlichen Zeichnen nur noch ein fertiges Bild platzieren muss.
+   * @param rotation Rotation im Bogenmaß, im Uhrzeigersinn (deckt sich mit northArrowRotation).
+   * @param sizePx Zielgröße (Breite/Höhe) des Pfeils in Pixel vor der Rotation.
+   */
+  private async _renderNorthArrow(
+    rotation: number,
+    sizePx = 256,
+  ): Promise<string> {
+    const image = new Image();
+    const svgBlob = new Blob([NORTH_ARROW_SVG], { type: 'image/svg+xml' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        image.onload = (): void => resolve();
+        image.onerror = (): void =>
+          reject(new Error('Failed to load north arrow SVG'));
+        image.src = svgUrl;
+      });
+
+      // Canvas-Seitenlänge = Diagonale der Zielgröße, damit die rotierte
+      // Form vollständig innerhalb des Canvas bleibt (kein Clipping).
+      const canvasSize = Math.ceil(sizePx * Math.SQRT2);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      const ctx = canvas.getContext('2d')!;
+      ctx.translate(canvasSize / 2, canvasSize / 2);
+      ctx.rotate(rotation);
+      ctx.drawImage(image, -sizePx / 2, -sizePx / 2, sizePx, sizePx);
+
+      return canvas.toDataURL('image/png');
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
   }
 
-  // ---------------------------------------------------------
-  // Größe und Position
-  // ---------------------------------------------------------
-
-  // Diese Werte entsprechen der bisherigen Positionierung
-  // des Nordpfeils.
-  const height = this.northArrowHeight;
-  const width = height * (0.42 / 0.62); // Seitenverhältnis der Ursprungsform beibehalten
-
-  const rowY = this._calcMapInfoGraphicsRowY();
-
-  // Rotation in Radiant
-  const rotation = this.northArrowRotation ?? 0;
-
-  // Mittelpunkt des Nordpfeils
-  const center = {
-    x:
-      this.mapInfoPlacement.coords.x +
-      this.mapInfoPlacement.size.width -
-      width / 2,
-
-    y: rowY + height / 2,
-  };
-
-  // ---------------------------------------------------------
-  // Rotation
-  // ---------------------------------------------------------
-
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-
-  const rotate = (
-    dx: number,
-    dy: number,
-  ): [number, number] => [
-    center.x + dx * cos - dy * sin,
-    center.y + dx * sin + dy * cos,
-  ];
-
-  // ---------------------------------------------------------
-  // Polygon-Hilfsfunktion
-  // ---------------------------------------------------------
-
-  const drawPolygon = (
-    points: [number, number][],
-    style: 'F' | 'FD',
-  ): void => {
-    if (points.length < 3) {
+  /**
+   * Platziert den vorgerenderten Nordpfeil ({@link northArrowImage},
+   * bereits rotiert) unten rechts in der Karteninformation-Box: rechts
+   * neben dem Maßstabsbalken, in derselben Grafikzeile (siehe
+   * {@link _calcMapInfoGraphicsRowY}, {@link _drawScaleBar}).
+   */
+  private _drawNorthArrow(): void {
+    if (!this.mapInfoPlacement || !this.northArrowImage) {
       return;
     }
 
-    const start = points[0];
+    // Gerastertes Nordpfeil-Bild ist quadratisch (siehe _renderNorthArrow),
+    // daher width === height === northArrowHeight.
+    const size = this.northArrowHeight;
+    const rowY = this._calcMapInfoGraphicsRowY();
+    const x =
+      this.mapInfoPlacement.coords.x + this.mapInfoPlacement.size.width - size;
 
-    const segments: [number, number][] = [];
+    this.pdfDoc.addImage(this.northArrowImage, 'PNG', x, rowY, size, size);
+  }
 
-    for (let i = 1; i < points.length; i += 1) {
-      segments.push([
-        points[i][0] - points[i - 1][0],
-        points[i][1] - points[i - 1][1],
-      ]);
-    }
-
-    // Letzte Linie zurück zum Ausgangspunkt
-    segments.push([
-      start[0] - points[points.length - 1][0],
-      start[1] - points[points.length - 1][1],
-    ]);
-
-    this.pdfDoc.lines(
-      segments,
-      start[0],
-      start[1],
-      [1, 1],
-      style,
-      true,
-    );
-  };
-
-  // ---------------------------------------------------------
-  // Grundabmessungen
-  // ---------------------------------------------------------
-
-  const halfWidth = width / 2;
-  const halfHeight = height / 2;
-
-  /*
-   * Grundform der SVG:
-   *
-   *                  ▲
-   *                 /█\
-   *                /███\
-   *               /█████\
-   *              /██████\
-   *             /███│████\
-   *            /████│█████\
-   *           /█████│██████\
-   *          ◄──────┘──────►
-   *
-   * Die Unterseite besitzt eine deutliche Einkerbung.
-   */
-
-  // ---------------------------------------------------------
-  // Äußere Form
-  // ---------------------------------------------------------
-
-  const tip = rotate(
-    0,
-    -halfHeight,
-  );
-
-  const leftBottom = rotate(
-    -halfWidth,
-    halfHeight,
-  );
-
-  const rightBottom = rotate(
-    halfWidth,
-    halfHeight,
-  );
-
-  // ---------------------------------------------------------
-  // Eingekerbter Mittelpunkt
-  // ---------------------------------------------------------
-
-  // Der Mittelpunkt liegt bewusst deutlich oberhalb
-  // der beiden äußeren unteren Enden.
-  //
-  // 0.65 = ausgewogene Einkerbung entsprechend der
-  // Charakteristik der SVG-Vorlage.
-  const bottomCenter = rotate(
-    0,
-    halfHeight * 0.65,
-  );
-
-  // ---------------------------------------------------------
-  // Schwarze Grundform
-  // ---------------------------------------------------------
-
-  this.pdfDoc.setFillColor(
-    20,
-    20,
-    20,
-  );
-
-  this.pdfDoc.setDrawColor(
-    20,
-    20,
-    20,
-  );
-
-  this.pdfDoc.setLineWidth(
-    0.005,
-  );
-
-  /*
-   * Die komplette äußere Pfeilform.
-   *
-   * Wichtig ist hier die Reihenfolge:
-   *
-   * Spitze
-   *   ↓
-   * rechter Fuß
-   *   ↓
-   * Einkerbung
-   *   ↓
-   * linker Fuß
-   *   ↓
-   * zurück zur Spitze
-   */
-  drawPolygon(
-    [
-      tip,
-      rightBottom,
-      bottomCenter,
-      leftBottom,
-    ],
-    'FD',
-  );
-
-  // ---------------------------------------------------------
-  // Weißer innerer Ausschnitt
-  // ---------------------------------------------------------
-
-  /*
-   * Der weiße Ausschnitt folgt der charakteristischen
-   * Innenform der SVG.
-   *
-   * Dadurch bleiben außen zwei schwarze Schenkel stehen.
-   */
-
-  const innerTop = rotate(
-    0,
-    -halfHeight * 0.18,
-  );
-
-  const innerRightTop = rotate(
-    width * 0.055,
-    -height * 0.12,
-  );
-
-  const innerRightBottom = rotate(
-    halfWidth * 0.72,
-    halfHeight * 0.70,
-  );
-
-  const innerLeftBottom = rotate(
-    -halfWidth * 0.72,
-    halfHeight * 0.70,
-  );
-
-  this.pdfDoc.setFillColor(
-    255,
-    255,
-    255,
-  );
-
-  this.pdfDoc.setDrawColor(
-    255,
-    255,
-    255,
-  );
-
-  drawPolygon(
-    [
-      innerTop,
-      innerRightTop,
-      innerRightBottom,
-      innerLeftBottom,
-    ],
-    'F',
-  );
-
-  // ---------------------------------------------------------
-  // Schwarzer Mittelsteg
-  // ---------------------------------------------------------
-
-  /*
-   * Der Mittelsteg ist leicht asymmetrisch.
-   *
-   * Dadurch nähert sich die Form stärker der SVG-Vorlage
-   * an als ein einfacher symmetrischer Strich.
-   */
-
-  const stemTop = rotate(
-    -width * 0.015,
-    -height * 0.17,
-  );
-
-  const stemTopRight = rotate(
-    width * 0.045,
-    -height * 0.10,
-  );
-
-  const stemBottomRight = rotate(
-    width * 0.29,
-    height * 0.30,
-  );
-
-  const stemBottomLeft = rotate(
-    0,
-    height * 0.12,
-  );
-
-  this.pdfDoc.setFillColor(
-    20,
-    20,
-    20,
-  );
-
-  drawPolygon(
-    [
-      stemTop,
-      stemTopRight,
-      stemBottomRight,
-      stemBottomLeft,
-    ],
-    'F',
-  );
-
-  // ---------------------------------------------------------
-  // Außenkontur
-  // ---------------------------------------------------------
-
-  this.pdfDoc.setDrawColor(
-    20,
-    20,
-    20,
-  );
-
-  this.pdfDoc.setLineWidth(
-    0.004,
-  );
-
-  this.pdfDoc.line(
-    tip[0],
-    tip[1],
-    rightBottom[0],
-    rightBottom[1],
-  );
-
-  this.pdfDoc.line(
-    rightBottom[0],
-    rightBottom[1],
-    bottomCenter[0],
-    bottomCenter[1],
-  );
-
-  this.pdfDoc.line(
-    bottomCenter[0],
-    bottomCenter[1],
-    leftBottom[0],
-    leftBottom[1],
-  );
-
-  this.pdfDoc.line(
-    leftBottom[0],
-    leftBottom[1],
-    tip[0],
-    tip[1],
-  );
-}
   /**
    * Adds a page to the PDF document, on which is added the title of the layer
    * whose legend entries are being added. Sets the text style to `info`.

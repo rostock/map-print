@@ -41,5 +41,12 @@ export default (): Required<PrintConfig> => {
     // PDFCreator._calcImagePlacement / _calcFixedImagePlacement.
     imageSizeList: [],
     imageSizeDefault: undefined,
+    // Kein regionsspezifischer Default: printEPSG ist deployment-spezifisch
+    // (haengt von der jeweiligen Kartenregion/-projektion ab) und gehoert
+    // daher in die jeweilige config.json, nicht in den generischen
+    // Plugin-Default. Ohne Angabe wird die Live-Projektion der Karte
+    // verwendet (bisheriges Verhalten).
+    printEPSG: undefined,
+    pattern: [],
   };
 };
