@@ -902,30 +902,32 @@
        * WMS-Layer, es entsteht kein separater Handler. Es zaehlt der
        * erste Treffer ueber alle Kandidaten-URLs hinweg.
        */
-       function matchUrlPattern(urls: string[], layer: string[]): WmsPrintLayer | undefined {
-  const patterns = config.pattern ?? [];
+      function matchUrlPattern(urls: string[], layer: string | string[]): WmsPrintLayer | undefined {
+        const patterns = config.pattern ?? [];
+        // Layer sicher in ein Array umwandeln, falls es ein String oder undefined ist
+        const layerArray = Array.isArray(layer) ? layer : (layer ? [layer] : []);
+        for (const url of urls) {
+          if (!url) {
+            continue;
+          }
 
-  for (const url of urls) {
-    if (!url) {
-      continue;
-    }
+          const match = patterns.find((p) =>
+            p.pattern.every(
+            //  (entry) => url.includes(entry) || layerArray.some((l) => l.includes(entry))
+            (entry) => url === entry || layerArray.some((l) => l === entry)
+            )
+          );
 
-    const match = patterns.find((p) =>
-      p.pattern.every(
-        (entry) => url.includes(entry) || layer.some((l) => l.includes(entry))
-      )
-    );
+          if (match) {
+            const replacedUrl = match.completeUrl
+            ? match.replacement
+            : match.pattern.reduce((acc, entry) => acc.replace(entry, match.replacement), url);
+            return { type: 'wms', ...parseWmsGetMapUrl(replacedUrl) };
+          }
+        }
 
-    if (match) {
-      const replacedUrl = match.completeUrl
-        ? match.replacement
-        : match.pattern.reduce((acc, entry) => acc.replace(entry, match.replacement), url);
-      return { type: 'wms', ...parseWmsGetMapUrl(replacedUrl) };
-    }
-  }
-
-  return undefined;
-}
+        return undefined;
+      }
 
       /**
        * Baut die für PrintCompositor benötigte Layer-Liste aus den aktiven
