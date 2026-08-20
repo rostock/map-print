@@ -72,6 +72,26 @@ type PDFCreatorOptions = {
    * Unset/0, wenn keine Rotation vorliegt.
    */
   northArrowRotation?: number;
+  /**
+   * Karten-Koordinaten der oberen rechten Ecke des Kartenbereichs (nach
+   * Rotation, d.h. wie sie tatsaechlich oben rechts auf der fertigen Seite
+   * liegt). X wird horizontal oberhalb der Karte beschriftet (rechtsbuendig
+   * zur rechten Kartenkante), Y senkrecht (90° gedreht) rechts neben der
+   * Karte. Ohne diese Angabe werden keine Eck-Koordinaten gedruckt.
+   */
+  topRightCoordinate?: { x: number; y: number };
+  /**
+   * Karten-Koordinaten der unteren linken Ecke des Kartenbereichs (nach
+   * Rotation). X wird horizontal unterhalb der Karte beschriftet
+   * (linksbuendig zur linken Kartenkante), Y senkrecht links neben der
+   * Karte. Ohne diese Angabe werden keine Eck-Koordinaten gedruckt.
+   */
+  bottomLeftCoordinate?: { x: number; y: number };
+  /**
+   * Menschenlesbare Bezeichnung der Projektion (z.B. 'ETRS89/UTM-33N'),
+   * wird in Klammern hinter den X-Werten der Eckkoordinaten gedruckt.
+   */
+  crsName?: string;
   /** The orientation of the PDF. */
   orientation: OrientationOptions.LANDSCAPE | OrientationOptions.PORTRAIT;
   /** The format of the PDF. */
@@ -226,6 +246,15 @@ export default class PDFCreator {
   /** Richtung von Norden nach oben auf der Seite (im Uhrzeigersinn, Bogenmaß) für den Nordpfeil. */
   northArrowRotation?: number;
 
+  /** Karten-Koordinaten der oberen rechten Ecke, siehe PDFCreatorOptions.topRightCoordinate. */
+  topRightCoordinate?: { x: number; y: number };
+
+  /** Karten-Koordinaten der unteren linken Ecke, siehe PDFCreatorOptions.bottomLeftCoordinate. */
+  bottomLeftCoordinate?: { x: number; y: number };
+
+  /** Bezeichnung der Druck-Projektion, siehe PDFCreatorOptions.crsName. */
+  crsName?: string;
+
   /** Data-URL (PNG) des vorgerenderten, bereits rotierten Nordpfeils, siehe {@link _renderNorthArrow}. */
   private northArrowImage?: string;
 
@@ -243,15 +272,27 @@ export default class PDFCreator {
   private readonly mapInfoGraphicsGap = 0.04;
 
   /**
-   * Höhe (in Zoll) des Nordpfeils — doppelt so groß wie die nominelle
-   * Grafikzeilen-Höhe ({@link mapInfoGraphicsHeight}), damit er deutlich
-   * sichtbarer ist. Da das gerasterte Nordpfeil-Bild quadratisch ist
-   * (siehe {@link _renderNorthArrow}), gilt width === height ===
-   * northArrowHeight. Da er dieselbe Höhe wie mapInfoGraphicsHeight
-   * überragt, muss der Platz für nachfolgende Elemente (Kartenlink) auf
-   * dieser (größeren) Höhe basieren, nicht auf mapInfoGraphicsHeight.
+   * Höhe (in Zoll) des Nordpfeils — Basiswert doppelt so groß wie die
+   * nominelle Grafikzeilen-Höhe ({@link mapInfoGraphicsHeight}), plus 1cm
+   * (~0,3937in) zusätzliche Höhe auf Wunsch. Da er die
+   * mapInfoGraphicsHeight überragt, muss der Platz für nachfolgende
+   * Elemente (Kartenlink) auf dieser (größeren) Höhe basieren, nicht auf
+   * mapInfoGraphicsHeight.
    */
-  private readonly northArrowHeight = this.mapInfoGraphicsHeight * 2;
+  private readonly northArrowHeight = this.mapInfoGraphicsHeight * 2 + 1 / 2.54;
+
+  /**
+   * Breite (in Zoll) des Nordpfeils. War bisher quadratisch (= dem
+   * Basiswert von northArrowHeight, also width === height, siehe
+   * {@link _renderNorthArrow}); jetzt eigenständig, da Höhe und Breite auf
+   * Wunsch unterschiedlich vergrößert wurden: Basiswert plus 0,5cm
+   * (~0,1969in) zusätzliche Breite. Da das gerasterte Nordpfeil-Bild
+   * quadratisch ist, wird es beim Zeichnen (addImage) leicht nicht-
+   * uniform auf width × height gestreckt, statt unverzerrt zentriert zu
+   * werden -- bei den hier gewählten, moderaten Maßen kaum wahrnehmbar,
+   * aber technisch keine reine "mehr Rand"-Vergrößerung.
+   */
+  private readonly northArrowWidth = this.mapInfoGraphicsHeight * 2 + 0.5 / 2.54;
 
   /** The current layer for which a legend page is being added */
   currentLayerTitle?: string;
@@ -362,6 +403,9 @@ export default class PDFCreator {
     }
     this.scaleDenominator = pdfCreatorOptions.scaleDenominator;
     this.northArrowRotation = pdfCreatorOptions.northArrowRotation;
+    this.topRightCoordinate = pdfCreatorOptions.topRightCoordinate;
+    this.bottomLeftCoordinate = pdfCreatorOptions.bottomLeftCoordinate;
+    this.crsName = pdfCreatorOptions.crsName;
     this.northArrowImage = await this._renderNorthArrow(
       this.northArrowRotation ?? 0,
     );
@@ -982,10 +1026,9 @@ export default class PDFCreator {
     // _calcMapInfoGraphicsRowY).
     const rowY = this._calcMapInfoGraphicsRowY();
     // Reservierter Platz für den Nordpfeil rechts vom Balken — entspricht
-    // der tatsächlichen (quadratischen) Breite des gerasterten Nordpfeils
-    // (siehe _renderNorthArrow/_drawNorthArrow), nicht mehr einem fest
-    // codierten, schmaleren Wert.
-    const northArrowWidth = this.northArrowHeight;
+    // der tatsächlichen Breite des gerasterten Nordpfeils (siehe
+    // _renderNorthArrow/_drawNorthArrow).
+    const northArrowWidth = this.northArrowWidth;
     const northArrowGap = 0.08;
 
     // Platz für die Einheit-Beschriftung nach dem Balkenende einkalkulieren.
@@ -1152,15 +1195,132 @@ export default class PDFCreator {
     if (!this.mapInfoPlacement || !this.northArrowImage) {
       return;
     }
-
-    // Gerastertes Nordpfeil-Bild ist quadratisch (siehe _renderNorthArrow),
-    // daher width === height === northArrowHeight.
-    const size = this.northArrowHeight;
-    const rowY = this._calcMapInfoGraphicsRowY();
+  
+    // 1. Höhe der Überschrift (1 Zeile) ermitteln
+    const headerHeight = this._calcTotalLineHeight(1);
+  
+    // 2. Start-Y: Direkt unterhalb der Überschrift des Feldes
+    const startY = this.mapInfoPlacement.coords.y + headerHeight;
+  
+    // 3. End-Y: Unterkante der Box (entspricht der Höhe des Nachbarfeldes)
+    const boxBottomY = this.mapInfoPlacement.coords.y + this.mapInfoPlacement.size.height;
+  
+    // Optional: Falls der Pfeil unten nicht direkt den Rahmen berühren soll, 
+    // kannst du hier einen kleinen Abstand (z. B. 2 mm) abziehen:
+    const bottomPadding = 0; 
+    const endY = boxBottomY - bottomPadding;
+  
+    // 4. Verfügbare Gesamthöhe für den Nordpfeil
+    const arrowHeight = endY - startY;
+  
+    // 5. Proportionale Breite berechnen (Seitenverhältnis beibehalten)
+    const aspectRatio = this.northArrowWidth / this.northArrowHeight;
+    const arrowWidth = arrowHeight * aspectRatio;
+  
+    // 6. X-Position: Rechtsbündig an der rechten Box-Kante
     const x =
-      this.mapInfoPlacement.coords.x + this.mapInfoPlacement.size.width - size;
+      this.mapInfoPlacement.coords.x +
+      this.mapInfoPlacement.size.width -
+      arrowWidth;
+  
+    // 7. Nordpfeil zeichnen
+    this.pdfDoc.addImage(
+      this.northArrowImage,
+      'PNG',
+      x,
+      startY,
+      arrowWidth,
+      arrowHeight,
+    );
+  }
 
-    this.pdfDoc.addImage(this.northArrowImage, 'PNG', x, rowY, size, size);
+  /**
+   * Formatiert einen Koordinatenwert fuer die Eckbeschriftung. Mit
+   * withCrsName=true wird -- falls this.crsName gesetzt ist -- die
+   * Projektionsbezeichnung in Klammern angehaengt (nur an den X-Werten
+   * verwendet, um die Bezeichnung nicht an allen vier Werten zu
+   * wiederholen).
+   */
+  private _formatCornerCoordinate(
+    value: number,
+    withCrsName = false,
+  ): string {
+    const formatted = value.toFixed(2);
+    return withCrsName && this.crsName
+      ? `${formatted} (${this.crsName})`
+      : formatted;
+  }
+
+  /**
+   * Zeichnet die Karten-Koordinaten der oberen rechten Ecke: Y horizontal
+   * oberhalb der Karte (rechtsbuendig zur rechten Kartenkante), X senkrecht
+   * (90° gedreht) rechts neben der Karte, oben an der Kartenkante
+   * ausgerichtet.
+   *
+   * HINWEIS zur Leserichtung des Y-Werts: aktuell von oben nach unten
+   * (angle: -90) -- laeuft damit neben der rechten Kartenkante nach unten.
+   * Bevorzugt ihr stattdessen von unten nach oben lesend (uebliche
+   * Konvention bei manchen Gitternetz-Beschriftungen), einfach auf
+   * `angle: 90` aendern.
+   */
+  private _drawTopRightCoordinate(): void {
+    if (!this.topRightCoordinate || !this.imgPlacement) {
+      return;
+    }
+    this._setTextStyle('info');
+    this.pdfDoc.setFontSize(7);
+
+    const gap = 0.05;
+    const rightEdge =
+      this.imgPlacement.coords.x + this.imgPlacement.size.width;
+    const topEdge = this.imgPlacement.coords.y;
+
+    this.pdfDoc.text(
+      this._formatCornerCoordinate(this.topRightCoordinate.y, true),
+      rightEdge,
+      topEdge - gap,
+      { align: 'right', baseline: 'bottom' },
+    );
+
+    this.pdfDoc.text(
+      this._formatCornerCoordinate(this.topRightCoordinate.x),
+      rightEdge + gap,
+      topEdge,
+      { angle: -90, align: 'left', baseline: 'bottom' },
+    );
+  }
+
+  /**
+   * Zeichnet die Karten-Koordinaten der unteren linken Ecke: X horizontal
+   * unterhalb der Karte (linksbuendig zur linken Kartenkante), Y senkrecht
+   * links neben der Karte, von unten nach oben lesend (angle: 90), unten
+   * an der Kartenkante ausgerichtet -- spiegelbildlich zu
+   * _drawTopRightCoordinate.
+   */
+  private _drawBottomLeftCoordinate(): void {
+    if (!this.bottomLeftCoordinate || !this.imgPlacement) {
+      return;
+    }
+    this._setTextStyle('info');
+    this.pdfDoc.setFontSize(7);
+
+    const gap = 0.05;
+    const leftEdge = this.imgPlacement.coords.x;
+    const bottomEdge = this.imgPlacement.coords.y + this.imgPlacement.size.height;
+
+    this.pdfDoc.text(
+      this._formatCornerCoordinate(this.bottomLeftCoordinate.y, true),
+      leftEdge,
+      bottomEdge + gap,
+      { align: 'left', baseline: 'top' },
+    );
+
+    this.pdfDoc.text(
+      this._formatCornerCoordinate(this.bottomLeftCoordinate.x),
+      leftEdge - gap,
+      bottomEdge,
+      { angle: 90, align: 'left', baseline: 'bottom' },
+    );
   }
 
   /**
@@ -1216,6 +1376,9 @@ export default class PDFCreator {
       this.imgPlacement!.size.width,
       this.imgPlacement!.size.height,
     );
+
+    this._drawTopRightCoordinate();
+    this._drawBottomLeftCoordinate();
 
     if (this.title) {
       this._setTextStyle('title');

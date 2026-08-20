@@ -222,15 +222,15 @@ export type PrintConfig = {
   /** The key of the default map-area size variant. Needs to be in imageSizeList. */
   imageSizeDefault?: string | undefined;
   /**
-   * EPSG-Code der Projektion, in der gedruckt werden soll -- akzeptiert
-   * sowohl die blanke Zahl (z.B. 25833) als auch den vollen String (z.B.
-   * 'EPSG:25833'), unabhängig von der Live-Render-Projektion der Karte.
-   * Sinnvoll, wenn die Karte selbst in einer Projektion mit
-   * breitengradabhängiger Maßstabsverzerrung rendert (z.B. EPSG:3857 /
-   * Web-Mercator) -- ohne printEPSG würde der gedruckte Maßstab dann nicht
-   * stimmen. Ohne Angabe wird die Live-Projektion der Karte verwendet.
+   * EPSG-Code (mit menschenlesbarer Bezeichnung, z.B. für die
+   * Eckkoordinaten-Beschriftung) der Projektion, in der gedruckt werden
+   * soll -- unabhängig von der Live-Render-Projektion der Karte. Sinnvoll,
+   * wenn die Karte selbst in einer Projektion mit breitengradabhängiger
+   * Maßstabsverzerrung rendert (z.B. EPSG:3857 / Web-Mercator) -- ohne
+   * printEPSG würde der gedruckte Maßstab dann nicht stimmen. Ohne Angabe
+   * wird die Live-Projektion der Karte verwendet.
    */
-  printEPSG?: number | string | undefined;
+  printEPSG?: PrintEPSG | undefined;
   /**
    * Regeln, um Layer-URLs vor dem Druck zu ersetzen (z.B. WMTS -> WMS für
    * einen Dienst, der beides anbietet). Der erste Treffer gewinnt.
@@ -252,11 +252,28 @@ export type PrintState = {
 };
 
 /**
+ * EPSG-Code der Druck-Projektion mit menschenlesbarer Bezeichnung, z.B.
+ * für die Eckkoordinaten-Beschriftung auf dem PDF.
+ */
+export type PrintEPSG = {
+  /** EPSG-Code als Zahl, z.B. 25833. */
+  key: number;
+  /** Menschenlesbare Bezeichnung, z.B. 'ETRS89/UTM-33N'. */
+  name: string;
+};
+
+/** Possible keys of a {@link PrintEPSG} with corresponding type. */
+const printEPSGKeysPattern: Record<string, Pattern> = {
+  key: Number,
+  name: String,
+};
+
+/**
  * Normalisiert einen EPSG-Code (blanke Zahl oder String) auf die volle
  * 'EPSG:xxxx'-Form, wie sie OpenLayers/WMS erwarten. Ein bereits mit
  * 'EPSG:' beginnender String bleibt unveraendert.
  */
-function normalizeEpsgCode(value: number | string): string {
+export function normalizeEpsgCode(value: number | string): string {
   const raw = String(value).trim();
   return raw.toUpperCase().startsWith('EPSG:') ? raw : `EPSG:${raw}`;
 }
@@ -473,17 +490,11 @@ export function getConfigAndState(
     config.font || defaultOptions.font;
 
   /**
-   * EPSG-Code der Druck-Projektion, falls abweichend von der
-   * Live-Render-Projektion der Karte konfiguriert. Wird -- egal ob als
-   * blanke Zahl oder String angegeben -- immer auf die volle
-   * 'EPSG:xxxx'-Form normalisiert, wie sie OpenLayers/WMS erwarten.
-   * @example 'EPSG:25833'
+   * EPSG-Code (mit Bezeichnung) der Druck-Projektion, falls abweichend von
+   * der Live-Render-Projektion der Karte konfiguriert.
    */
-  const printEPSGRaw = config.printEPSG ?? defaultOptions.printEPSG;
-  const printEPSG: string | undefined =
-    printEPSGRaw !== undefined && printEPSGRaw !== ''
-      ? normalizeEpsgCode(printEPSGRaw)
-      : undefined;
+  const printEPSG: PrintEPSG | undefined =
+    config.printEPSG || defaultOptions.printEPSG;
 
   /**
    * Regeln, um Layer-URLs vor dem Druck zu ersetzen (z.B. WMTS -> WMS).
@@ -608,10 +619,7 @@ export function validate(options: PrintConfig): void {
       options.imageSizeDefault,
       maybe(oneOf(...imageSizeList.map((option) => option.key))),
     );
-    // printEPSG akzeptiert bewusst number ODER string (siehe
-    // normalizeEpsgCode) -- mit den hier verfuegbaren Bausteinen (oneOf
-    // prueft Werte-, keine Typ-Alternativen) nicht sauber abbildbar, daher
-    // hier kein check() (wie bei charLimit oben ebenfalls schon der Fall).
+    check(options.printEPSG, maybe(strict(printEPSGKeysPattern)));
     check(options.pattern, maybe([strict(printUrlPatternKeysPattern)]));
   } catch (err) {
     getLogger(name).error('Invalid config', err);

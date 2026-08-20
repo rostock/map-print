@@ -14,26 +14,50 @@
     {
       "key": "A5",
       "format": "A5",
-      "portrait": { "width": 5.13, "height": 5.6 },
-      "landscape": { "width": 7.57, "height": 3.3 }
+      "portrait": {
+        "width": 5.13,
+        "height": 5.6
+      },
+      "landscape": {
+        "width": 7.57,
+        "height": 3.3
+      }
     },
     {
       "key": "A4",
       "format": "A4",
-      "portrait": { "width": 7.27, "height": 8.29 },
-      "landscape": { "width": 10.69, "height": 5.1 }
+      "portrait": {
+        "width": 7.27,
+        "height": 8.29
+      },
+      "landscape": {
+        "width": 10.69,
+        "height": 5.1
+      }
     },
     {
       "key": "A3",
       "format": "A3",
-      "portrait": { "width": 10.29, "height": 12.64 },
-      "landscape": { "width": 15.14, "height": 8.5 }
+      "portrait": {
+        "width": 10.29,
+        "height": 12.64
+      },
+      "landscape": {
+        "width": 15.14,
+        "height": 8.5
+      }
     },
     {
       "key": "A2",
       "format": "A2",
-      "portrait": { "width": 14.74, "height": 18.89 },
-      "landscape": { "width": 21.59, "height": 12.85 }
+      "portrait": {
+        "width": 14.74,
+        "height": 18.89
+      },
+      "landscape": {
+        "width": 21.59,
+        "height": 12.85
+      }
     }
   ],
   "imageSizeDefault": "A4",
@@ -47,13 +71,59 @@
     "regular": "plugin-assets/fonts/fira-sans.regular.ttf",
     "bold": "plugin-assets/fonts/fira-sans.bold.ttf"
   },
-  "pattern":[
+  "pattern": [
     {
       "name": "orkamv",
-      "pattern": ["geodienste/orkamv/service"],
+      "pattern": [
+        "geodienste/orkamv/service"
+      ],
       "replacement": "https://www.orka-mv.de/geodienste/orkamv-mapserver_druck/wms?service=WMS&version=1.1.1&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=stadtplan&srs=EPSG:25833",
+      "completeUrl": true
+    },
+    {
+      "name": "orkamv-graustufen",
+      "pattern": [
+        "/orkamv/wmts/orkamv-graustufen/"
+      ],
+      "replacement": "https://www.orka-mv.de/geodienste/orkamv-mapserver-graustufen_druck/wms?service=WMS&version=1.1.1&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=stadtplan&srs=EPSG:25833",
+      "completeUrl": true
+    },
+    {
+      "name": "liegenschaftskarte",
+      "pattern": [
+        "/liegenschaftskarte/"
+      ],
+      "replacement": "https://geo.sv.rostock.de/geodienste/liegenschaftskarte_druck/wms?service=WMS&version=1.1.1&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=hro.liegenschaftskarte.liegenschaftskarte&srs=EPSG:25833",
+      "completeUrl": true
+    },
+    {
+      "name": "luftbild_mv-10",
+      "pattern": [
+        "/luftbild_mv-10/"
+      ],
+      "replacement": "https://geo.sv.rostock.de/geodienste/luftbild_mv-10/wms?service=WMS&version=1.1.1&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=hro.luftbild_mv-10.luftbild_mv-10&srs=EPSG:25833",
+      "completeUrl": true
+    },
+    {
+      "name": "luftbild_mv-20",
+      "pattern": [
+        "/luftbild_mv-20/"
+      ],
+      "replacement": "https://geo.sv.rostock.de/geodienste/luftbild_mv-20/wms?service=WMS&version=1.1.1&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=hro.luftbild_mv-20.luftbild_mv-20&srs=EPSG:25833",
+      "completeUrl": true
+    },
+    {
+      "name": "basemap-grau",
+      "pattern": [
+        "https://sgx.geodatenzentrum.de/wmts_basemapde/",
+        "de_basemapde_web_raster_grau"
+      ],
+      "replacement": "https://sgx.geodatenzentrum.de/wms_basemapde?service=WMS&version=1.3.0&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=de_basemapde_web_raster_grau&crs=EPSG:25833",
       "completeUrl": true
     }
   ],
-  "printEPSG": 25833
+  "printEPSG": {
+    "key": 25833,
+    "name": "ETRS89/UTM-33N"
+  }
 }

@@ -216,6 +216,7 @@
   import { getLogger } from '@vcsuite/logger';
   import type { Extent } from 'ol/extent';
   import { transform } from 'ol/proj';
+  import type { ProjectionLike } from 'ol/proj';
   import type { PrintPlugin } from '../index.js';
   import type { CanvasAndPlacement, Size } from './pdfCreator.js';
   import PDFCreator from './pdfCreator.js';
@@ -237,6 +238,7 @@
     OrientationOptions,
   } from '../common/configManager.js';
   import type { PrintUrlPattern } from '../common/configManager.js';
+  import { normalizeEpsgCode } from '../common/configManager.js';
   import { getMapElement, getMapSize } from '../common/util.js';
   import { name } from '../../package.json';
 
@@ -900,47 +902,28 @@
        * WMS-Layer, es entsteht kein separater Handler. Es zaehlt der
        * erste Treffer ueber alle Kandidaten-URLs hinweg.
        */
-      // Zur Veranschaulichung: Das Interface für dein Pattern-Objekt sieht jetzt in etwa so aus:
-// interface PrintUrlPattern {
-//   name?: string;
-//   pattern: string[]; // <-- Hier jetzt ein Array statt einem einzelnen String
-//   replacement: string;
-//   completeUrl?: boolean;
-// }
-
-function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
-  console.log("Pattern");
-  console.log(config.pattern);
-  const patterns = (config.pattern ?? []) as PrintUrlPattern[];
+       function matchUrlPattern(urls: string[], layer: string[]): WmsPrintLayer | undefined {
+  const patterns = config.pattern ?? [];
 
   for (const url of urls) {
     if (!url) {
       continue;
     }
 
-    // 1. ANPASSUNG: Prüfe, ob ALLE Strings aus dem pattern-Array in der URL vorkommen
-    const match = patterns.find((p) => 
-      p.pattern.every((searchString) => url.includes(searchString))
+    const match = patterns.find((p) =>
+      p.pattern.every(
+        (entry) => url.includes(entry) || layer.some((l) => l.includes(entry))
+      )
     );
 
     if (match) {
-      let replacedUrl = url;
-
-      // 2. ANPASSUNG: Die Ersetzungslogik
-      if (match.completeUrl) {
-        // Die gesamte URL wird durch das Replacement ersetzt (wie in deiner Config gewünscht)
-        replacedUrl = match.replacement;
-      } else {
-        // Falls completeUrl false ist: Wir gehen alle Strings im Array durch 
-        // und ersetzen sie in der URL. 
-        match.pattern.forEach((searchString) => {
-          replacedUrl = replacedUrl.replace(searchString, match.replacement);
-        });
-      }
-
+      const replacedUrl = match.completeUrl
+        ? match.replacement
+        : match.pattern.reduce((acc, entry) => acc.replace(entry, match.replacement), url);
       return { type: 'wms', ...parseWmsGetMapUrl(replacedUrl) };
     }
   }
+
   return undefined;
 }
 
@@ -988,18 +971,16 @@ function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
                 source as { getUrls?: () => string[] | null } | undefined
               )?.getUrls?.() ?? [];
             const candidateUrls = [layer.url, ...sourceUrls];
-            console.log(config);
+
             // TEMPORÄR zum Debuggen -- zeigt genau, wogegen der Pattern-
             // Abgleich fuer diesen Layer prueft.
             console.log('PrintCompositor candidateUrls', layer.name, candidateUrls);
-
-            const patched = matchUrlPattern(candidateUrls);
-            console.log(patched);
+            console.log("layer:", layer);
+            const patched = matchUrlPattern(candidateUrls, layer.layer);
             if (patched) {
               return [patched];
             }
             if (layer instanceof WMSLayer) {
-              console.log("Layer ist WMS");
               return [
                 {
                   type: 'wms',
@@ -1079,6 +1060,53 @@ function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
           activeMap instanceof OpenlayersMap
             ? -printAreaRotation
             : 0;
+
+        // Frueh berechnet (vor pdfCreator.setup()), damit die BBox sowohl
+        // fuer die Eckkoordinaten-Beschriftung (topRightCoordinate, siehe
+        // setup()-Aufruf unten) als auch fuer PrintCompositor (weiter
+        // unten in der .then()-Verzweigung) verfuegbar ist -- keine
+        // doppelte Berechnung.
+        let printAreaGeometry:
+          | {
+              bbox: Extent;
+              printProjection: ProjectionLike;
+              mapProjection: ProjectionLike;
+            }
+          | undefined;
+        if (printAreaState && activeMap instanceof OpenlayersMap) {
+          // Live-Render-Projektion der Karte (z.B. EPSG:3857 /
+          // Web-Mercator -- hat einen breitengradabhaengigen Skalenfaktor
+          // von 1/cos(Breite), in Rostock ~1,7x). printAreaState.width/
+          // height sind zwar bereits echte, verzerrungsfreie Meterwerte
+          // (aus printScale berechnet, siehe computePrintAreaSize), wuerden
+          // aber als 3857-Koordinatendifferenz falsch interpretiert.
+          const mapProjection = activeMap.olMap.getView().getProjection();
+
+          // config.printEPSG.key (z.B. 25833, UTM) -- normalizeEpsgCode macht
+          // daraus die volle 'EPSG:xxxx'-Form. Eine solche Projektion ist
+          // weitgehend verzerrungsfrei, 1 Koordinateneinheit entspricht
+          // dort (nahezu) 1 echtem Meter -- width/height koennen direkt
+          // als Meter verwendet werden. Nur das Zentrum muss dafuer
+          // reprojiziert werden; Breite/Höhe bleiben unveraendert. Ohne
+          // konfiguriertes printEPSG bleibt das bisherige Verhalten
+          // (Live-Projektion) erhalten.
+          const printEpsgCode = config.printEPSG
+            ? normalizeEpsgCode(config.printEPSG.key)
+            : undefined;
+          const printProjection = printEpsgCode ?? mapProjection;
+          const printCenter =
+            printEpsgCode && printEpsgCode !== mapProjection.getCode()
+              ? transform(printAreaState.center, mapProjection, printEpsgCode)
+              : printAreaState.center;
+
+          const bbox: Extent = [
+            printCenter[0] - printAreaState.width / 2,
+            printCenter[1] - printAreaState.height / 2,
+            printCenter[0] + printAreaState.width / 2,
+            printCenter[1] + printAreaState.height / 2,
+          ];
+          printAreaGeometry = { bbox, printProjection, mapProjection };
+        }
 
         let logo;
         if (config.printLogo) {
@@ -1242,6 +1270,19 @@ function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
             scale,
             scaleDenominator: scaleDenominatorValue,
             northArrowRotation: northArrowRotationValue,
+            topRightCoordinate: printAreaGeometry
+              ? {
+                  x: printAreaGeometry.bbox[2],
+                  y: printAreaGeometry.bbox[3],
+                }
+              : undefined,
+            bottomLeftCoordinate: printAreaGeometry
+              ? {
+                  x: printAreaGeometry.bbox[0],
+                  y: printAreaGeometry.bbox[1],
+                }
+              : undefined,
+            crsName: config.printEPSG?.name,
           })
           .then(async () => {
             // after setup possible to execute pdfCreator.create()
@@ -1266,47 +1307,17 @@ function matchUrlPattern(urls: string[]): WmsPrintLayer | undefined {
               // relativ zum Live-Viewport, während PrintCompositor ein vom
               // Viewport unabhängiges Bild erzeugt. Müsste bei Bedarf
               // separat gelöst werden.
-              // Live-Render-Projektion der Karte (z.B. EPSG:3857 /
-              // Web-Mercator -- hat einen breitengradabhaengigen
-              // Skalenfaktor von 1/cos(Breite), in Rostock ~1,7x). Ein
-              // Screenshot dieser Ansicht traegt diese Verzerrung immer im
-              // Bildinhalt mit sich -- printAreaState.width/height sind
-              // zwar bereits echte, verzerrungsfreie Meterwerte (aus
-              // printScale berechnet, siehe computePrintAreaSize), wuerden
-              // aber als 3857-Koordinatendifferenz falsch interpretiert.
-              const mapProjection = activeMap.olMap.getView().getProjection();
-
-              // config.printEPSG (z.B. 'EPSG:25833', UTM) ist eine
-              // weitgehend verzerrungsfreie Projektion, in der 1
-              // Koordinateneinheit (nahezu) 1 echtem Meter entspricht --
-              // dort koennen width/height direkt als Meter verwendet
-              // werden. Nur das Zentrum muss dafuer reprojiziert werden;
-              // Breite/Höhe bleiben unveraendert. Ohne konfiguriertes
-              // printEPSG bleibt das bisherige Verhalten (Live-Projektion)
-              // erhalten.
-              // HINWEIS: die Rotation wird unveraendert uebernommen --
-              // Web-Mercator hat ueberall exakt geografisch Nord als
-              // "oben", UTM weicht davon je nach Lage zum Zonen-
-              // Mittelmeridian um einen kleinen Betrag ab
-              // (Meridiankonvergenz, für Rostock in EPSG:25833 im Bereich
-              // von grob 1-2°) -- für die meisten Drucke vernachlässigbar,
-              // aber nicht exakt null.
-              const printProjection = config.printEPSG ?? mapProjection;
-              const printCenter =
-                config.printEPSG && config.printEPSG !== mapProjection.getCode()
-                  ? transform(
-                      printAreaState.center,
-                      mapProjection,
-                      config.printEPSG,
-                    )
-                  : printAreaState.center;
-
-              const bbox: Extent = [
-                printCenter[0] - printAreaState.width / 2,
-                printCenter[1] - printAreaState.height / 2,
-                printCenter[0] + printAreaState.width / 2,
-                printCenter[1] + printAreaState.height / 2,
-              ];
+              // bbox/printProjection/mapProjection wurden oben schon fuer
+              // topRightCoordinate berechnet (printAreaGeometry) -- hier
+              // nur wiederverwendet, keine doppelte Berechnung. HINWEIS zur
+              // Rotation: die wird unveraendert uebernommen -- Web-Mercator
+              // hat ueberall exakt geografisch Nord als "oben", UTM weicht
+              // davon je nach Lage zum Zonen-Mittelmeridian um einen
+              // kleinen Betrag ab (Meridiankonvergenz, für Rostock in
+              // EPSG:25833 im Bereich von grob 1-2°) -- für die meisten
+              // Drucke vernachlässigbar, aber nicht exakt null.
+              const { bbox, printProjection, mapProjection } =
+                printAreaGeometry!;
               const layers = buildPrintLayers(activeMap);
 
               const compositor = new PrintCompositor();
