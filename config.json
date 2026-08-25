@@ -117,7 +117,7 @@
     {
       "name": "basemap-farbe",
       "pattern": [
-        "https://sgx.geodatenzentrum.de/wmts_basemapde/",
+        "https://sgx.geodatenzentrum.de/wmts_basemapde/tile/1.0.0/{Layer}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
         "de_basemapde_web_raster_farbe"
       ],
       "replacement": "https://sgx.geodatenzentrum.de/wms_basemapde?service=WMS&version=1.3.0&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=de_basemapde_web_raster_farbe&crs=EPSG:25833",
@@ -126,7 +126,7 @@
     {
       "name": "basemap-grau",
       "pattern": [
-        "https://sgx.geodatenzentrum.de/wmts_basemapde/",
+        "https://sgx.geodatenzentrum.de/wmts_basemapde/tile/1.0.0/{Layer}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
         "de_basemapde_web_raster_grau"
       ],
       "replacement": "https://sgx.geodatenzentrum.de/wms_basemapde?service=WMS&version=1.3.0&request=GetMap&transparent=FALSE&format=image/png&styles=&layers=de_basemapde_web_raster_grau&crs=EPSG:25833",

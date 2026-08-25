@@ -138,7 +138,7 @@ export type PrintUrlPattern = {
   /** Name/Bezeichner der Regel, nur zur Wiedererkennung in der Config. */
   name: string;
   /** Teilstring, nach dem in Layer-URLs gesucht wird. */
-  pattern: string;
+  pattern: string | Array<string>;
   /**
    * Ersetzung: bei completeUrl=true die komplette neue GetMap-URL (inkl.
    * Query-String), sonst nur der Ersatz für den gefundenen Teilstring
@@ -152,7 +152,7 @@ export type PrintUrlPattern = {
 /** Possible keys of a {@link PrintUrlPattern} with corresponding type. */
 const printUrlPatternKeysPattern: Record<string, Pattern> = {
   name: String,
-  pattern: String,
+  pattern: oneOf(String, [String]),
   replacement: String,
   completeUrl: maybe(Boolean),
 };

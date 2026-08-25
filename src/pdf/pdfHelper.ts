@@ -49,11 +49,11 @@ export function formatContactInfo(
         const value = contactInfo[key as keyof ContactInfo]!;
         switch (key) {
           case 'mail':
-            return `${app.vueI18n.t('print.pdf.content.contact.mail')}: ${value}`;
           case 'phone':
-            return `${app.vueI18n.t('print.pdf.content.contact.phone')}: ${value}`;
-          case 'fax':
-            return `${app.vueI18n.t('print.pdf.content.contact.fax')}: ${value}`;
+          case 'fax': {
+            const label = app.vueI18n.t(`print.pdf.content.contact.${key}`);
+            return label ? `${label}: ${value}` : value;
+          }
           default:
             return value;
         }
@@ -115,6 +115,7 @@ export async function getMapInfo(
   printObliqueName: boolean,
   printCoordinates: boolean,
   projectionOptions: ProjectionOptions,
+  printEPSG?: { key: number; name: string },
 ): Promise<TextWithHeader | undefined> {
   const text: string[] = [];
 
@@ -135,11 +136,17 @@ export async function getMapInfo(
         groundPosition,
         projectionOptions,
       );
-      text.push(
-        `${app.vueI18n.t('print.pdf.content.centerCoordinate')} ${coordsHeader}`,
-      );
+      //text.push(
+      //  `${app.vueI18n.t('print.pdf.content.centerCoordinate')} ${coordsHeader}`,
+      //);
       if (coords) {
         text.push(coords);
+      }
+      if (printEPSG) {
+        text.push(
+          `${app.vueI18n.t('print.pdf.content.crSystem')}: ${printEPSG.name}`,
+        );
+        text.push(`EPSG: ${printEPSG.key}`);
       }
       // text can be extended by other informations like layers
     } else if (cameraPosition && map instanceof PanoramaMap) {

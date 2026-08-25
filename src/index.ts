@@ -149,8 +149,8 @@ export default function plugin(options: PrintConfig): PrintPlugin {
             createButton: 'Erstellen',
             content: {
               contact: {
-                header: 'Kontakt',
-                mail: 'E-Mail',
+                header: 'Herausgeber',
+                mail: '',
                 phone: 'Tel.',
                 fax: 'Fax',
               },
@@ -158,6 +158,7 @@ export default function plugin(options: PrintConfig): PrintPlugin {
               obliqueImageName: 'Schrägluftbild',
               centerCoordinate: 'Mittelpunkt',
               cameraCoordinate: 'Aufnahmepunkt',
+              crSystem: 'Koordinatensystem',
             },
             iframeNotSupported:
               'Aufgrund technischer Beschränkungen können Legendenelemente des Typs Iframe nicht gedruckt werden.',
@@ -228,8 +229,8 @@ export default function plugin(options: PrintConfig): PrintPlugin {
             createButton: 'Create',
             content: {
               contact: {
-                header: 'Contact',
-                mail: 'Email',
+                header: 'Editor',
+                mail: '',
                 phone: 'Phone',
                 fax: 'Fax',
               },
@@ -237,6 +238,7 @@ export default function plugin(options: PrintConfig): PrintPlugin {
               obliqueImageName: 'Oblique image',
               centerCoordinate: 'Center',
               cameraCoordinate: 'Capture point',
+              crSystem: 'Coordinate system',
             },
             iframeNotSupported:
               'Due to technical limitations, legend items of type Iframe cannot be printed.',

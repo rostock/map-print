@@ -6,7 +6,6 @@ import pageSizes from './standardPageSizes.js';
 import type { PageStyle } from './styles.js';
 import { pageStyles, fontWeights } from './styles.js';
 import {
-  contactKeysPattern,
   LegendOrientationOptions,
   OrientationOptions,
 } from '../common/configManager.js';
@@ -422,6 +421,9 @@ export default class PDFCreator {
     // bleiben und nur bei tatsächlicher Überlänge zusätzlich umbrechen.
     let wrappedContact: TextWithHeader | undefined;
     if (pdfCreatorOptions.contact) {
+      console.log(pdfCreatorOptions.contact.header);
+      console.log(pdfCreatorOptions.contact);
+      console.log(pdfCreatorOptions);
       wrappedContact = {
         header: pdfCreatorOptions.contact.header,
         text: pdfCreatorOptions.contact.text.flatMap(
@@ -823,26 +825,34 @@ export default class PDFCreator {
    */
   private _calcImageUpperBorder(): number {
     const gapToImage = this.formatting.elementMargin / 2;
+    // Bisher wurde nur EIN Element geprüft (Titel > Logo > QR-Code, erster
+    // Treffer gewinnt) — bei gleichzeitigem Titel UND Logo/QR-Code wurde
+    // die tatsächliche Höhe von Logo/QR-Code dadurch komplett ignoriert.
+    // War die reservierte Titel-Zeile niedriger als das Logo/QR-Icon,
+    // begann der Kartenbereich (und damit die direkt darüber gezeichnete
+    // Eckkoordinate) zu früh und kollidierte mit dem noch laufenden
+    // Logo/QR-Code. Jetzt: obere Kante = tiefste untere Kante aller
+    // tatsächlich vorhandenen Kopfzeilen-Elemente.
+    const candidates: number[] = [];
     if (this.title) {
-      return (
-        this.titlePlacement!.coords.y +
-        this.titlePlacement!.size.height +
-        gapToImage
+      candidates.push(
+        this.titlePlacement!.coords.y + this.titlePlacement!.size.height,
       );
     }
     if (this.logo) {
-      return (
-        this.logoPlacement!.coords.y + this.logoPlacement!.size.height + gapToImage
+      candidates.push(
+        this.logoPlacement!.coords.y + this.logoPlacement!.size.height,
       );
     }
     if (this.qrCodePlacement) {
-      return (
-        this.qrCodePlacement.coords.y +
-        this.qrCodePlacement.size.height +
-        gapToImage
+      candidates.push(
+        this.qrCodePlacement.coords.y + this.qrCodePlacement.size.height,
       );
     }
-    return this.formatting.pageMargins[0];
+    if (!candidates.length) {
+      return this.formatting.pageMargins[0];
+    }
+    return Math.max(...candidates) + gapToImage;
   }
 
   /**
@@ -1433,6 +1443,7 @@ export default class PDFCreator {
     }
 
     if (this.contact) {
+      console.log("Kontakt: ", this.contact);
       this._setTextStyle('info');
       // -1 line height in y because of contact header
       this.pdfDoc.text(

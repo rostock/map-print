@@ -903,6 +903,9 @@
        * erste Treffer ueber alle Kandidaten-URLs hinweg.
        */
       function matchUrlPattern(urls: string[], layer: string | string[]): WmsPrintLayer | undefined {
+        console.log("Pattern: ", config.pattern );
+        console.log("gegen URL: ", urls);
+        console.log("layer: ", layer);
         const patterns = config.pattern ?? [];
         // Layer sicher in ein Array umwandeln, falls es ein String oder undefined ist
         const layerArray = Array.isArray(layer) ? layer : (layer ? [layer] : []);
@@ -919,6 +922,7 @@
           );
 
           if (match) {
+            console.log("Match:", match);
             const replacedUrl = match.completeUrl
             ? match.replacement
             : match.pattern.reduce((acc, entry) => acc.replace(entry, match.replacement), url);
@@ -1140,6 +1144,7 @@
             printObliqueName,
             printCoordinates,
             coordinatesProj,
+            config.printEPSG,
           );
         }
 
