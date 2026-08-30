@@ -20,6 +20,7 @@ export default (): Required<PrintConfig> => {
     printObliqueName: true,
     printCoordinates: true,
     printQR: false,
+    printAreaRotationEnabled: false,
     coordinatesProj: { type: 'Projection', epsg: 'EPSG:4326' },
     resolutionList: [500, 720, 1280, 1920, 3840],
     resolutionDefault: 1280,

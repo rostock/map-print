@@ -65,6 +65,7 @@
   "printQR": true,
   "printObliqueName": false,
   "printFeatureInfo": false,
+  "printAreaRotationEnabled": false,
   "charLimit": 500,
   "font": {
     "name": "fira-sans",

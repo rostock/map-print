@@ -189,6 +189,11 @@ export type PrintConfig = {
   printQR?: boolean;
   /** Whether coordinates should be printed on pdf. Will be part of MapInfo */
   printCoordinates?: boolean;
+  /**
+   * Whether the print-area rectangle's rotation handle is shown/usable.
+   * If false (default), the print area can only be moved, not rotated.
+   */
+  printAreaRotationEnabled?: boolean;
   /** The projection to be used for the coordinates. */
   coordinatesProj?: ProjectionOptions;
   /** List of resolution the user can choose from for image/jpg creation. */
@@ -456,6 +461,11 @@ export function getConfigAndState(
     defaultOptions.printCoordinates,
   );
 
+  const printAreaRotationEnabled: boolean = parseBoolean(
+    config.printAreaRotationEnabled,
+    defaultOptions.printAreaRotationEnabled,
+  );
+
   /**
    * max. char in the description.
    */
@@ -534,6 +544,7 @@ export function getConfigAndState(
       printLinkToMap,
       printQR,
       printCoordinates,
+      printAreaRotationEnabled,
       coordinatesProj,
       contactDetails,
       charLimit,
@@ -608,6 +619,7 @@ export function validate(options: PrintConfig): void {
     check(options.printLinkToMap, maybe(Boolean));
     check(options.printQR, maybe(Boolean));
     check(options.printCoordinates, maybe(Boolean));
+    check(options.printAreaRotationEnabled, maybe(Boolean));
     check(options.coordinatesProj, maybe({ type: String, epsg: String }));
     check(options.resolutionList, maybe([Number]));
     const resolutionList =

@@ -385,9 +385,81 @@
        */
       const printScale = ref<number>(1000);
 
-      /** Berechnet die Rechteck-Größe (Karteneinheiten) aus selectedImageSize (Inch) und printScale (1:x). Fällt auf feste Werte zurück, falls keine imageSize-Variante passt oder die Maßstabs-Eingabe ungültig ist. */
-      function computePrintAreaSize(): { width: number; height: number } {
+      /**
+       * Für den Kartenbereich tatsächlich verfügbare Größe (Inch), unter
+       * Reservierung von Titel/Kontakt/Karteninfo/Beschreibung — Ergebnis
+       * von PDFCreator.calcAvailableImageSize(). Reaktiv aktualisiert durch
+       * updateAvailableImageSize(); bis zur ersten Auflösung bzw. bei
+       * Fehlern nutzt computePrintAreaSize() ersatzweise die rohe
+       * selectedImageSize (bisheriges Verhalten).
+       */
+      const availableImageSize = ref<Size | undefined>(undefined);
+
+      /**
+       * Berechnet availableImageSize neu, über eine eigene, ausschließlich
+       * dafür verwendete PDFCreator-Instanz (siehe calcAvailableImageSize).
+       * Titel und Beschreibung gehen mit dem tatsächlich eingegebenen Text
+       * ein — eine kurze/leere Beschreibung reserviert entsprechend weniger
+       * Platz, damit kein Kartenbild unnötig klein wird. QR-Code geht nur
+       * als Ja/Nein ein (Inhalt beeinflusst seine Größe nicht). Wird bei
+       * Titel-/Beschreibungsänderung gedebounced aufgerufen (siehe
+       * scheduleAvailableImageSizeUpdate) — bei Format-/Orientierungs-/
+       * Größen-Varianten-Wechsel und QR-Toggle dagegen sofort.
+       */
+      async function updateAvailableImageSize(): Promise<void> {
         const imgSize = selectedImageSize.value;
+        if (!imgSize) {
+          availableImageSize.value = undefined;
+          return;
+        }
+        try {
+          const contact =
+            config.contactDetails && Object.keys(config.contactDetails).length
+              ? formatContactInfo(app, config.contactDetails)
+              : undefined;
+          const mapInfo = config.printMapInfo
+            ? await getMapInfo(
+                app,
+                config.printObliqueName,
+                config.printCoordinates,
+                config.coordinatesProj,
+                config.printEPSG,
+              )
+            : undefined;
+          const logo = config.printLogo ? await getLogo(app) : undefined;
+          const fonts = {
+            name: config.font?.name,
+            regular: getPluginAssetUrl(app, name, config.font?.regular)!,
+            bold: getPluginAssetUrl(app, name, config.font?.bold)!,
+          };
+
+          const preview = new PDFCreator();
+          availableImageSize.value = await preview.calcAvailableImageSize({
+            orientation: state.selectedOrientation,
+            format: state.selectedFormat,
+            title: state.title || undefined,
+            logo,
+            qrLink:
+              config.printQR && printQr.value
+                ? PREVIEW_PLACEHOLDER
+                : undefined,
+            description: state.description || undefined,
+            contact,
+            mapInfo,
+            fonts,
+          });
+        } catch (error) {
+          getLogger(plugin.name).error(
+            'Konnte verfügbare Kartenbereich-Größe nicht berechnen, falle auf konfigurierte imageSize zurück.',
+            error,
+          );
+          availableImageSize.value = undefined;
+        }
+      }
+
+      /** Berechnet die Rechteck-Größe (Karteneinheiten) aus availableImageSize (ersatzweise selectedImageSize) in Inch und printScale (1:x). Fällt auf feste Werte zurück, falls keine imageSize-Variante passt oder die Maßstabs-Eingabe ungültig ist. */
+      function computePrintAreaSize(): { width: number; height: number } {
+        const imgSize = availableImageSize.value ?? selectedImageSize.value;
         if (
           !imgSize ||
           !Number.isFinite(printScale.value) ||
@@ -444,6 +516,25 @@
       }
 
       // --- Druckbereich-Rechteck Logik ---
+      /**
+       * Steuert per config.json (printAreaRotationEnabled, Default false), ob
+       * der Rotationsgriff überhaupt sichtbar/bedienbar ist. Ist dies false,
+       * bleibt printAreaState.rotation dauerhaft bei 0, da handleDragEvent
+       * (weiter unten) die einzige Stelle ist, an der sie je verändert wird.
+       */
+      const enableRotation = computed(
+        () => !!config.printAreaRotationEnabled,
+      );
+
+      /**
+       * Platzhalter für qrLink bei der Vorschau-Berechnung
+       * (updateAvailableImageSize) — der genaue Inhalt ist irrelevant, nur
+       * ob QR-Code überhaupt gezeigt wird, beeinflusst die reservierte
+       * Fläche. Titel/Beschreibung gehen dagegen mit dem echten Text ein,
+       * siehe updateAvailableImageSize.
+       */
+      const PREVIEW_PLACEHOLDER = 'x';
+
       /** Property-Key, über den Rechteck- und Rotationsgriff-Feature unterschieden werden. */
       const printAreaRoleKey = 'printAreaRole';
       const printAreaRectangleRole = 'rectangle';
@@ -550,17 +641,66 @@
       // gewählte Größen-Variante koppeln. Ändert dabei ausdrücklich NICHT
       // das Zoomlevel/die Resolution der Kartenansicht — nur die Größe des
       // Rechtecks selbst.
+      watch(printScale, () => {
+        resizePrintArea();
+      });
+
+      // Verfügbare Fläche (Titel-/Kontakt-/Karteninfo-/Beschreibung-
+      // Reservierung, siehe updateAvailableImageSize) neu berechnen und
+      // danach das Rechteck darauf anpassen. Bewusst getrennt vom
+      // printScale-Watcher oben: printScale betrifft nur die Umrechnung in
+      // Karteneinheiten, nicht die in Inch reservierte Fläche selbst.
       watch(
         [
-          printScale,
           () => state.selectedFormat,
           () => state.selectedOrientation,
           () => state.selectedImageSize,
+          printQr,
         ],
-        () => {
+        async () => {
+          await updateAvailableImageSize();
           resizePrintArea();
         },
+        { immediate: true },
       );
+
+      let availableImageSizeDebounceTimer:
+        | ReturnType<typeof setTimeout>
+        | undefined;
+      /**
+       * Verzögerung, bevor updateAvailableImageSize() nach einer Titel-/
+       * Beschreibungsänderung tatsächlich läuft — vermeidet eine komplette
+       * Layout-Neuberechnung (inkl. Font-Metriken) bei jedem einzelnen
+       * Tastendruck, ohne dass die Anzeige spürbar hinterherhinkt.
+       */
+      const AVAILABLE_IMAGE_SIZE_DEBOUNCE_MS = 300;
+
+      /**
+       * Gedebouncter Aufruf von updateAvailableImageSize() + resizePrintArea()
+       * für Titel-/Beschreibungsänderungen, die bei jedem Tastendruck
+       * feuern. Format-/Orientierungs-/Größen-Wechsel und QR-Toggle laufen
+       * bewusst NICHT gedebounced (Watcher oben) — das sind diskrete,
+       * bewusste Aktionen, kein Tippen.
+       */
+      function scheduleAvailableImageSizeUpdate(): void {
+        if (availableImageSizeDebounceTimer !== undefined) {
+          clearTimeout(availableImageSizeDebounceTimer);
+        }
+        availableImageSizeDebounceTimer = setTimeout(() => {
+          availableImageSizeDebounceTimer = undefined;
+          void updateAvailableImageSize().then(() => {
+            resizePrintArea();
+          });
+        }, AVAILABLE_IMAGE_SIZE_DEBOUNCE_MS);
+      }
+
+      // Titel/Beschreibung ändern sich mit jedem Tastendruck — deshalb
+      // gedebounced, damit Kartenbild/Rechteck trotzdem live mitschrumpfen
+      // bzw. wieder wachsen, sobald weniger Platz gebraucht wird (kein
+      // unnötiger weißer Bereich mehr), ohne bei jedem Zeichen zu rechnen.
+      watch([() => state.title, () => state.description], () => {
+        scheduleAvailableImageSizeUpdate();
+      });
 
       /** Rotationsgriff: Füllung in Sekundärfarbe, weißer Rand. Rechteck: Umrandung in Primärfarbe. */
       function printAreaStyleFunction(feature: FeatureLike): Style {
@@ -568,6 +708,9 @@
         const secondary = getColorByKey(app, 'secondary');
         const background = getColorByKey(app, 'background');
         if (feature.get(printAreaRoleKey) === printAreaHandleRole) {
+          if (!enableRotation.value) {
+            return new Style({});
+          }
           return new Style({
             image: new CircleStyle({
               radius: 7,
@@ -664,7 +807,7 @@
             }
             const { map } = evt;
 
-            if (isPixelOverHandle(map, evt.pixel)) {
+            if (enableRotation.value && isPixelOverHandle(map, evt.pixel)) {
               printAreaDragMode = 'rotate';
               baseHandleAngle = Math.atan2(
                 printAreaState.height / 2,
@@ -742,7 +885,7 @@
             target.style.cursor = printAreaMoveCursorStyle;
             return;
           }
-          if (isPixelOverHandle(evt.map, evt.pixel)) {
+          if (enableRotation.value && isPixelOverHandle(evt.map, evt.pixel)) {
             target.style.cursor = rotateCursorStyle;
           } else if (isPixelOverRectangle(evt.map, evt.pixel)) {
             target.style.cursor = printAreaMoveCursorStyle;
@@ -1021,13 +1164,14 @@
         const mapElement = getMapElement(activeMap);
         const mapSize = getMapSize(activeMap);
 
-        // Ziel-Pixelgroesse des Druckbereichs -- direkt aus dem gewaehlten
-        // Papierformat/Orientierung (dieselbe Quelle wie
-        // computePrintAreaSize(): selectedImageSize) und der gewaehlten
-        // Druckaufloesung (PPI) abgeleitet. Bewusst UNABHAENGIG von der
-        // aktuellen Fenster-/Kartenpanel-Groesse im Browser -- die Zoomstufe
-        // ist damit direkt an den gewuenschten Maszstab gekoppelt.
-        const targetImageSize = selectedImageSize.value;
+        // Ziel-Pixelgroesse des Druckbereichs -- aus der um Titel/Kontakt/
+        // Karteninfo/Beschreibung bereits reduzierten availableImageSize
+        // (Ersatzweise die rohe selectedImageSize), derselben Quelle wie
+        // computePrintAreaSize(), und der gewaehlten Druckaufloesung (PPI)
+        // abgeleitet. Bewusst UNABHAENGIG von der aktuellen Fenster-/
+        // Kartenpanel-Groesse im Browser -- die Zoomstufe ist damit direkt
+        // an den gewuenschten Maszstab gekoppelt.
+        const targetImageSize = availableImageSize.value ?? selectedImageSize.value;
         const targetPixelSize: Size | undefined = targetImageSize
           ? {
               width: targetImageSize.width * state.selectedPpi,
@@ -1250,12 +1394,13 @@
           ? printAreaState.width / printAreaState.height
           : mapSize.width / mapSize.height;
 
-        // Feste, konfigurierte Kartenbereich-Größe für die gewählte Größen-
-        // Variante — dieselbe Quelle (selectedImageSize), die auch die
-        // Größe des Druckbereich-Rechtecks bestimmt (computePrintAreaSize).
-        // Wenn vorhanden, füllt der Kartenbereich im PDF immer exakt diese
+        // Verfügbare, um Titel/Kontakt/Karteninfo/Beschreibung bereits
+        // reduzierte Größe — dieselbe Quelle (availableImageSize, mit
+        // Rückfall auf die rohe selectedImageSize), die auch die Größe des
+        // Druckbereich-Rechtecks bestimmt (computePrintAreaSize). Wenn
+        // vorhanden, füllt der Kartenbereich im PDF immer exakt diese
         // Größe aus (kein Letterboxing) — siehe PDFCreator._calcFixedImagePlacement.
-        const imageSize = selectedImageSize.value;
+        const imageSize = availableImageSize.value ?? selectedImageSize.value;
 
         const pdfCreator = new PDFCreator();
         await pdfCreator
@@ -1398,6 +1543,9 @@
         detachResolutionListener();
         mapActivatedListener();
         removePrintAreaLayer();
+        if (availableImageSizeDebounceTimer !== undefined) {
+          clearTimeout(availableImageSizeDebounceTimer);
+        }
       });
 
       return {

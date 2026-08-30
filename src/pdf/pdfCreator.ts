@@ -56,7 +56,7 @@ type Legend = {
   items: PrintableLegendItems;
 };
 
-type PDFCreatorOptions = {
+export type PDFCreatorOptions = {
   /** The scale of the given map */
   scale?: string;
   /**
@@ -138,6 +138,7 @@ const defaultOptions = getDefaultOptions();
  * gerastert.
  */
 const NORTH_ARROW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="41 69 137 161"><path fill="#141414" d="M 46.238169,224.71279 C 72.181446,167.45124 108.38026,74.363002 109.38949,74.231023 c 0,0 63.49396,150.124917 63.1308,150.738087 -0.26682,0.45052 -63.14608,-52.84225 -63.14608,-52.84225 0,0 -63.652921,53.72678 -63.136041,52.58593 z m 63.113211,-58.87684 c 0.0918,0.0318 50.97763,42.48485 50.97763,42.48485 0,0 -50.77874,-121.654357 -50.93588,-121.654357 C 97.202088,115.19917 58.135598,208.38115 58.527254,208.36865 c 0.283928,-0.008 50.197296,-42.74996 50.824126,-42.5327 z m -0.0496,-5.04515 c -0.38104,-0.31271 0.21746,-62.467537 0.21746,-62.467537 0,0 38.01819,93.845587 37.63937,93.534707 z"/></svg>`;
+
 
 export default class PDFCreator {
   initialized = false;
@@ -524,6 +525,43 @@ export default class PDFCreator {
   }
 
   /**
+   * Führt dieselbe Text-Layout-Berechnung wie {@link setup} aus (Titel,
+   * Logo/QR-Kopfzeile, Kontakt, Karteninfo, Beschreibung), jedoch OHNE dass
+   * bereits ein echtes Kartenbild vorliegen muss — `imgRatio`/`imageSize`
+   * werden nicht benötigt. Reiner Passthrough: `title`/`description` werden
+   * genauso behandelt wie in {@link setup} — bei kürzerem bzw. leerem Text
+   * fällt die reservierte Höhe entsprechend kleiner aus. Für eine stabile,
+   * vom aktuellen Textinhalt unabhängige Reservierung liegt es am Aufrufer,
+   * stattdessen z.B. einen ausreichend langen Platzhaltertext zu übergeben.
+   *
+   * Gedacht für die UI: damit kann z.B. das Druckbereich-Rechteck bereits
+   * VOR der eigentlichen Kartenabfrage seitenverhältnistreu zur wirklich
+   * verfügbaren Fläche bemessen werden, statt sich nur an der rohen,
+   * konfigurierten imageSize zu orientieren — die evtl. mit Beschreibung,
+   * Kontakt oder Karteninfo kollidieren würde. Diese PDFCreator-Instanz darf
+   * danach nicht mehr für {@link create} verwendet werden; dafür eine
+   * separate, frische Instanz anlegen.
+   * @param options Dieselben Optionen wie für {@link setup}, ohne
+   * `imgRatio`/`imageSize`.
+   * @returns Für den Kartenbereich verfügbare Größe in Inch.
+   */
+  public async calcAvailableImageSize(
+    options: Omit<PDFCreatorOptions, 'imgRatio' | 'imageSize'>,
+  ): Promise<Size> {
+    await this.setup({
+      ...options,
+      // wird von _calcImageUpperBorder/_calcImageLowerBorder nicht
+      // gelesen (nur für die Breiten/Höhen-Aufteilung INNERHALB der
+      // damit ermittelten Kante) — hier daher ein reiner Platzhalter.
+      imgRatio: 1,
+    });
+    return {
+      width: this.maxLineWidth,
+      height: this._calcImageLowerBorder() - this._calcImageUpperBorder(),
+    };
+  }
+
+  /**
    * Sets text style globally on {@link jsPDF} instance of {@link PDFCreator}.
    * @param textElement Name of a text element with font size and style declared.
    * @example 'description'
@@ -856,6 +894,32 @@ export default class PDFCreator {
   }
 
   /**
+   * Berechnet die untere Kante des Kartenbereichs: direkt oberhalb der
+   * Beschreibung (falls vorhanden), sonst oberhalb der höheren der beiden
+   * Info-Boxen (Kontakt/Karteninfo), sonst am unteren Seitenrand. Wird
+   * sowohl von der dynamischen ({@link _calcImagePlacement}) als auch von
+   * der festen, konfigurierten Platzierung ({@link _calcFixedImagePlacement})
+   * verwendet, damit der Kartenbereich in beiden Fällen gleichermaßen vor
+   * Beschreibung/Kontakt/Karteninfo zurückweicht, statt sie zu überlagern.
+   */
+  private _calcImageLowerBorder(): number {
+    if (this.description) {
+      return (
+        this.descriptionPlacement!.coords.y - this.formatting.elementMargin
+      );
+    }
+    // ohne description: an der höheren der beiden Info-Boxen ausrichten,
+    // statt nur an der zuerst vorhandenen.
+    const infoBoxYs = [
+      this.contactPlacement?.coords.y,
+      this.mapInfoPlacement?.coords.y,
+    ].filter((y): y is number => y !== undefined);
+    return infoBoxYs.length
+      ? Math.min(...infoBoxYs) - this.formatting.elementMargin
+      : this.formatting.pageMargins[2];
+  }
+
+  /**
    * Calculates the placement of the screenshot with max width and max height.
    * Position depends on page margins and position and height of title + description.
    * Max height and max width is the available space on the page. The image's
@@ -868,21 +932,7 @@ export default class PDFCreator {
    */
   private _calcImagePlacement(aspectRatio: number): ElementPlacement {
     const upperBorder = this._calcImageUpperBorder();
-    let lowerBorder;
-    if (this.description) {
-      lowerBorder =
-        this.descriptionPlacement!.coords.y - this.formatting.elementMargin;
-    } else {
-      // ohne description: an der höheren der beiden Info-Boxen ausrichten,
-      // statt nur an der zuerst vorhandenen.
-      const infoBoxYs = [
-        this.contactPlacement?.coords.y,
-        this.mapInfoPlacement?.coords.y,
-      ].filter((y): y is number => y !== undefined);
-      lowerBorder = infoBoxYs.length
-        ? Math.min(...infoBoxYs) - this.formatting.elementMargin
-        : this.formatting.pageMargins[2];
-    }
+    const lowerBorder = this._calcImageLowerBorder();
     // calc potential values by checking available space.
     let height = lowerBorder - upperBorder;
     let width = this.maxLineWidth;
@@ -1509,23 +1559,12 @@ export default class PDFCreator {
 
     if (this.description) {
       this._setTextStyle('description');
-      if (this.orientation === OrientationOptions.PORTRAIT) {
-        this.pdfDoc.text(
-          this.description,
-          this.descriptionPlacement!.coords.x,
-          this.imgPlacement!.coords.y +
-          this.imgPlacement!.size.height +
-          this.formatting.elementMargin,
-          { baseline: 'hanging' },
-        );
-      } else {
-        this.pdfDoc.text(
-          this.description,
-          this.descriptionPlacement!.coords.x,
-          this.descriptionPlacement!.coords.y,
-          { baseline: 'hanging' },
-        );
-      }
+      this.pdfDoc.text(
+        this.description,
+        this.descriptionPlacement!.coords.x,
+        this.descriptionPlacement!.coords.y,
+        { baseline: 'hanging' },
+      );
     }
 
     if (this.legend) {
