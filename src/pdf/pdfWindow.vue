@@ -215,7 +215,7 @@
   import type MapBrowserEvent from 'ol/MapBrowserEvent';
   import { getLogger } from '@vcsuite/logger';
   import type { Extent } from 'ol/extent';
-  import { transform } from 'ol/proj';
+  import { getPointResolution, transform } from 'ol/proj';
   import type { ProjectionLike } from 'ol/proj';
   import type { PrintPlugin } from '../index.js';
   import type { CanvasAndPlacement, Size } from './pdfCreator.js';
@@ -457,7 +457,23 @@
         }
       }
 
-      /** Berechnet die Rechteck-Größe (Karteneinheiten) aus availableImageSize (ersatzweise selectedImageSize) in Inch und printScale (1:x). Fällt auf feste Werte zurück, falls keine imageSize-Variante passt oder die Maßstabs-Eingabe ungültig ist. */
+      /**
+       * Berechnet die Rechteck-Größe in Karteneinheiten der Karten-VIEW-
+       * Projektion aus availableImageSize (ersatzweise selectedImageSize)
+       * in Inch und printScale (1:x). Echte Meter werden dabei lokal (an
+       * der Rechteck-Mitte) über getPointResolution in Karteneinheiten
+       * umgerechnet: bei einer bereits verzerrungsfreien View-Projektion
+       * (z.B. EPSG:25833) liefert das ~1 (No-Op), bei einer
+       * breitengradabhängig verzerrenden Projektion wie Web-Mercator
+       * (EPSG:3857) korrigiert es den Skalenfaktor 1/cos(Breite) -- ohne
+       * diese Korrektur zeigt das Rechteck einen kleineren Ausschnitt als
+       * echte Meter, während die BBox beim Druck (siehe createPdf, dort
+       * über printEPSG bereits verzerrungsfrei) korrekterweise die vollen
+       * echten Meter abfragt: der Druck wirkt dann größer als das
+       * Rechteck. Fällt auf feste Werte zurück, falls keine imageSize-
+       * Variante passt, die Maßstabs-Eingabe ungültig ist, oder keine 2D-
+       * Karte mit bekanntem Zentrum verfügbar ist.
+       */
       function computePrintAreaSize(): { width: number; height: number } {
         const imgSize = availableImageSize.value ?? selectedImageSize.value;
         if (
@@ -470,9 +486,28 @@
             height: fallbackPrintAreaHeight,
           };
         }
+        const trueMetersWidth =
+          imgSize.width * INCHES_TO_METERS * printScale.value;
+        const trueMetersHeight =
+          imgSize.height * INCHES_TO_METERS * printScale.value;
+
+        const activeMap = app.maps.activeMap;
+        const center =
+          printAreaState?.center ??
+          (activeMap instanceof OpenlayersMap
+            ? activeMap.olMap.getView().getCenter()
+            : undefined);
+        if (!(activeMap instanceof OpenlayersMap) || !center) {
+          return { width: trueMetersWidth, height: trueMetersHeight };
+        }
+        const mapProjection = activeMap.olMap.getView().getProjection();
+        const metersPerMapUnit = getPointResolution(mapProjection, 1, center);
+        if (!Number.isFinite(metersPerMapUnit) || metersPerMapUnit <= 0) {
+          return { width: trueMetersWidth, height: trueMetersHeight };
+        }
         return {
-          width: imgSize.width * INCHES_TO_METERS * printScale.value,
-          height: imgSize.height * INCHES_TO_METERS * printScale.value,
+          width: trueMetersWidth / metersPerMapUnit,
+          height: trueMetersHeight / metersPerMapUnit,
         };
       }
 
@@ -1224,36 +1259,51 @@
             }
           | undefined;
         if (printAreaState && activeMap instanceof OpenlayersMap) {
-          // Live-Render-Projektion der Karte (z.B. EPSG:3857 /
-          // Web-Mercator -- hat einen breitengradabhaengigen Skalenfaktor
-          // von 1/cos(Breite), in Rostock ~1,7x). printAreaState.width/
-          // height sind zwar bereits echte, verzerrungsfreie Meterwerte
-          // (aus printScale berechnet, siehe computePrintAreaSize), wuerden
-          // aber als 3857-Koordinatendifferenz falsch interpretiert.
           const mapProjection = activeMap.olMap.getView().getProjection();
 
-          // config.printEPSG.key (z.B. 25833, UTM) -- normalizeEpsgCode macht
-          // daraus die volle 'EPSG:xxxx'-Form. Eine solche Projektion ist
-          // weitgehend verzerrungsfrei, 1 Koordinateneinheit entspricht
-          // dort (nahezu) 1 echtem Meter -- width/height koennen direkt
-          // als Meter verwendet werden. Nur das Zentrum muss dafuer
-          // reprojiziert werden; Breite/Höhe bleiben unveraendert. Ohne
-          // konfiguriertes printEPSG bleibt das bisherige Verhalten
-          // (Live-Projektion) erhalten.
+          // config.printEPSG.key (z.B. 25833, UTM) -- normalizeEpsgCode
+          // macht daraus die volle 'EPSG:xxxx'-Form. Eine solche Projektion
+          // ist weitgehend verzerrungsfrei, 1 Koordinateneinheit entspricht
+          // dort (nahezu) 1 echtem Meter. Ohne konfiguriertes printEPSG
+          // bleibt das bisherige Verhalten (Live-Projektion) erhalten.
           const printEpsgCode = config.printEPSG
             ? normalizeEpsgCode(config.printEPSG.key)
             : undefined;
           const printProjection = printEpsgCode ?? mapProjection;
-          const printCenter =
-            printEpsgCode && printEpsgCode !== mapProjection.getCode()
-              ? transform(printAreaState.center, mapProjection, printEpsgCode)
-              : printAreaState.center;
+          const needsReprojection =
+            !!printEpsgCode && printEpsgCode !== mapProjection.getCode();
+          const printCenter = needsReprojection
+            ? transform(printAreaState.center, mapProjection, printEpsgCode)
+            : printAreaState.center;
+
+          // printAreaState.width/height sind Karteneinheiten der (evtl.
+          // breitengradabhaengig verzerrenden) Live-Render-Projektion der
+          // Karte (z.B. EPSG:3857/Web-Mercator, Skalenfaktor 1/cos(Breite),
+          // in Rostock ~1,7x -- siehe computePrintAreaSize). Fuer eine BBox
+          // in einer davon ABWEICHENDEN, verzerrungsfreien printProjection
+          // (z.B. EPSG:25833) muessen sie zurueck in echte Meter
+          // umgerechnet werden. Bleibt printProjection gleich
+          // mapProjection, ist keine Umrechnung noetig -- Rechteck und BBox
+          // nutzen dann dieselben Karteneinheiten.
+          let bboxWidth = printAreaState.width;
+          let bboxHeight = printAreaState.height;
+          if (needsReprojection) {
+            const metersPerMapUnit = getPointResolution(
+              mapProjection,
+              1,
+              printAreaState.center,
+            );
+            if (Number.isFinite(metersPerMapUnit) && metersPerMapUnit > 0) {
+              bboxWidth = printAreaState.width * metersPerMapUnit;
+              bboxHeight = printAreaState.height * metersPerMapUnit;
+            }
+          }
 
           const bbox: Extent = [
-            printCenter[0] - printAreaState.width / 2,
-            printCenter[1] - printAreaState.height / 2,
-            printCenter[0] + printAreaState.width / 2,
-            printCenter[1] + printAreaState.height / 2,
+            printCenter[0] - bboxWidth / 2,
+            printCenter[1] - bboxHeight / 2,
+            printCenter[0] + bboxWidth / 2,
+            printCenter[1] + bboxHeight / 2,
           ];
           printAreaGeometry = { bbox, printProjection, mapProjection };
         }
