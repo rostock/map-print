@@ -1485,6 +1485,12 @@
                 }
               : undefined,
             crsName: config.printEPSG?.name,
+            cornerCoordinateLabelX: app.vueI18n.t(
+              'print.pdf.content.cornerCoordinateLabelX',
+            ),
+            cornerCoordinateLabelY: app.vueI18n.t(
+              'print.pdf.content.cornerCoordinateLabelY',
+            ),
           })
           .then(async () => {
             // after setup possible to execute pdfCreator.create()

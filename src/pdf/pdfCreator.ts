@@ -91,7 +91,16 @@ export type PDFCreatorOptions = {
    * wird in Klammern hinter den X-Werten der Eckkoordinaten gedruckt.
    */
   crsName?: string;
-  /** The orientation of the PDF. */
+  /**
+   * Bezeichnung für den X-Wert (Rechtswert) der Eckkoordinaten, z.B.
+   * 'Rechtswert'. Ohne Angabe wird kein Label vor den X-Werten gedruckt.
+   */
+  cornerCoordinateLabelX?: string;
+  /**
+   * Bezeichnung für den Y-Wert (Hochwert) der Eckkoordinaten, z.B.
+   * 'Hochwert'. Ohne Angabe wird kein Label vor den Y-Werten gedruckt.
+   */
+  cornerCoordinateLabelY?: string;
   orientation: OrientationOptions.LANDSCAPE | OrientationOptions.PORTRAIT;
   /** The format of the PDF. */
   format: keyof typeof pageSizes;
@@ -255,6 +264,12 @@ export default class PDFCreator {
   /** Bezeichnung der Druck-Projektion, siehe PDFCreatorOptions.crsName. */
   crsName?: string;
 
+  /** Label vor dem X-Wert (Rechtswert) der Eckkoordinaten, siehe PDFCreatorOptions.cornerCoordinateLabelX. */
+  cornerCoordinateLabelX?: string;
+
+  /** Label vor dem Y-Wert (Hochwert) der Eckkoordinaten, siehe PDFCreatorOptions.cornerCoordinateLabelY. */
+  cornerCoordinateLabelY?: string;
+
   /** Data-URL (PNG) des vorgerenderten, bereits rotierten Nordpfeils, siehe {@link _renderNorthArrow}. */
   private northArrowImage?: string;
 
@@ -406,6 +421,8 @@ export default class PDFCreator {
     this.topRightCoordinate = pdfCreatorOptions.topRightCoordinate;
     this.bottomLeftCoordinate = pdfCreatorOptions.bottomLeftCoordinate;
     this.crsName = pdfCreatorOptions.crsName;
+    this.cornerCoordinateLabelX = pdfCreatorOptions.cornerCoordinateLabelX;
+    this.cornerCoordinateLabelY = pdfCreatorOptions.cornerCoordinateLabelY;
     this.northArrowImage = await this._renderNorthArrow(
       this.northArrowRotation ?? 0,
     );
@@ -1297,18 +1314,14 @@ export default class PDFCreator {
   /**
    * Formatiert einen Koordinatenwert fuer die Eckbeschriftung. Mit
    * withCrsName=true wird -- falls this.crsName gesetzt ist -- die
-   * Projektionsbezeichnung in Klammern angehaengt (nur an den X-Werten
-   * verwendet, um die Bezeichnung nicht an allen vier Werten zu
-   * wiederholen).
+   * Projektionsbezeichnung in Klammern angehaengt.
    */
   private _formatCornerCoordinate(
     value: number,
-    withCrsName = false,
+    label = ''
   ): string {
-    const formatted = value.toFixed(2);
-    return withCrsName && this.crsName
-      ? `${formatted} (${this.crsName})`
-      : formatted;
+    const formatted = value.toFixed(2).replace('.', ',');
+    return label ? `${formatted} ${label}` : formatted;
   }
 
   /**
@@ -1336,14 +1349,20 @@ export default class PDFCreator {
     const topEdge = this.imgPlacement.coords.y;
 
     this.pdfDoc.text(
-      this._formatCornerCoordinate(this.topRightCoordinate.y, true),
+      this._formatCornerCoordinate(
+        this.topRightCoordinate.y,
+        this.cornerCoordinateLabelY,
+      ),
       rightEdge,
       topEdge - gap,
       { align: 'right', baseline: 'bottom' },
     );
 
     this.pdfDoc.text(
-      this._formatCornerCoordinate(this.topRightCoordinate.x),
+      this._formatCornerCoordinate(
+        this.topRightCoordinate.x,
+        this.cornerCoordinateLabelX,
+      ),
       rightEdge + gap,
       topEdge,
       { angle: -90, align: 'left', baseline: 'bottom' },
@@ -1369,14 +1388,20 @@ export default class PDFCreator {
     const bottomEdge = this.imgPlacement.coords.y + this.imgPlacement.size.height;
 
     this.pdfDoc.text(
-      this._formatCornerCoordinate(this.bottomLeftCoordinate.y, true),
+      this._formatCornerCoordinate(
+        this.bottomLeftCoordinate.y,
+        this.cornerCoordinateLabelY,
+      ),
       leftEdge,
       bottomEdge + gap,
       { align: 'left', baseline: 'top' },
     );
 
     this.pdfDoc.text(
-      this._formatCornerCoordinate(this.bottomLeftCoordinate.x),
+      this._formatCornerCoordinate(
+        this.bottomLeftCoordinate.x,
+        this.cornerCoordinateLabelX,
+      ),
       leftEdge - gap,
       bottomEdge,
       { angle: 90, align: 'left', baseline: 'bottom' },

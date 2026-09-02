@@ -134,35 +134,7 @@ export default function plugin(options: PrintConfig): PrintPlugin {
       de: {
         print: {
           editorTitle: 'Druck-Editor',
-          pdf: {
-            tooltip: 'PDF der aktuellen Ansicht erstellen',
-            header: 'PDF erstellen',
-            format: 'Papierformat',
-            resolution: 'Auflösung',
-            portrait: 'Hochformat',
-            landscape: 'Querformat',
-            printLegend: 'Legende einbeziehen',
-            printFeatureInfo: 'Informationsfenster einbeziehen',
-            titlePlaceholder: 'Titel',
-            descriptionPlaceholder: 'Beschreibung (mehrzeilig möglich)',
-            mapLinkText: 'Link zur Karte',
-            createButton: 'Erstellen',
-            content: {
-              contact: {
-                header: 'Herausgeber',
-                mail: '',
-                phone: 'Tel.',
-                fax: 'Fax',
-              },
-              mapInfo: 'Karteninformation',
-              obliqueImageName: 'Schrägluftbild',
-              centerCoordinate: 'Mittelpunkt',
-              cameraCoordinate: 'Aufnahmepunkt',
-              crSystem: 'Koordinatensystem',
-            },
-            iframeNotSupported:
-              'Aufgrund technischer Beschränkungen können Legendenelemente des Typs Iframe nicht gedruckt werden.',
-          },
+          pdf: {},
           image: {
             tooltip: 'Bilddatei (JPG) der aktuellen Ansicht erstellen',
             header: 'Bild erstellen',
@@ -214,35 +186,7 @@ export default function plugin(options: PrintConfig): PrintPlugin {
       en: {
         print: {
           editorTitle: 'Print Editor',
-          pdf: {
-            tooltip: 'Create PDF of current view',
-            header: 'Create PDF',
-            format: 'Paper size',
-            resolution: 'Resolution',
-            portrait: 'Portrait',
-            landscape: 'Landscape',
-            printLegend: 'Include legend',
-            printFeatureInfo: 'Include information window',
-            titlePlaceholder: 'Title',
-            descriptionPlaceholder: 'Description (multiline possible)',
-            mapLinkText: 'Link to map',
-            createButton: 'Create',
-            content: {
-              contact: {
-                header: 'Editor',
-                mail: '',
-                phone: 'Phone',
-                fax: 'Fax',
-              },
-              mapInfo: 'Map information',
-              obliqueImageName: 'Oblique image',
-              centerCoordinate: 'Center',
-              cameraCoordinate: 'Capture point',
-              crSystem: 'Coordinate system',
-            },
-            iframeNotSupported:
-              'Due to technical limitations, legend items of type Iframe cannot be printed.',
-          },
+          pdf: { },
           image: {
             tooltip: 'Create image file (JPG) of current view',
             header: 'Create JPG',

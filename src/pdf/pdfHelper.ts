@@ -132,13 +132,10 @@ export async function getMapInfo(
     const cameraPosition = viewpoint?.cameraPosition;
 
     if (groundPosition) {
-      const { coordsHeader, coords } = getCoordinateInfo(
+      const { coords } = getCoordinateInfo(
         groundPosition,
         projectionOptions,
       );
-      //text.push(
-      //  `${app.vueI18n.t('print.pdf.content.centerCoordinate')} ${coordsHeader}`,
-      //);
       if (coords) {
         text.push(coords);
       }
