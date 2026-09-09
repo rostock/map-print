@@ -1543,13 +1543,17 @@
               const url = URL.createObjectURL(blob);
               const now = new Date();
               const timestamp: string = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-
-              downloadURI(url, 'geoporthro_' + timestamp + '.pdf');
+              const filename = 'geoporthro_' + timestamp + '.pdf';
+              downloadURI(url, filename);
               URL.revokeObjectURL(url);
             } else {
+
               // Kein Druckbereich-Rechteck aktiv (z.B. 3D-/Oblique-Karte,
               // oder Druck ohne definiertes Rechteck): bisheriger Weg über
               // einen Live-Screenshot der aktuell sichtbaren Kartenansicht.
+              const now = new Date();
+              const timestamp: string = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+              const filename = 'geoporthro_' + timestamp + '.pdf';
               const createFn = async (
                 canvas: HTMLCanvasElement,
                 translate: (s: string) => string,
@@ -1571,7 +1575,7 @@
                 app,
                 width,
                 createFn,
-                'map.pdf',
+                filename,
                 overlayWindows,
               );
             }
