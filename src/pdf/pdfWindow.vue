@@ -1541,7 +1541,10 @@
                 app.vueI18n.t(s),
               );
               const url = URL.createObjectURL(blob);
-              downloadURI(url, 'map.pdf');
+              const now = new Date();
+              const timestamp: string = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+
+              downloadURI(url, 'geoporthro_' + timestamp + '.pdf');
               URL.revokeObjectURL(url);
             } else {
               // Kein Druckbereich-Rechteck aktiv (z.B. 3D-/Oblique-Karte,

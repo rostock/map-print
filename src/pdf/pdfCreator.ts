@@ -1455,7 +1455,7 @@ export default class PDFCreator {
 
     this.pdfDoc.addImage(
       canvas,
-      'PNG',
+      'JPG',
       this.imgPlacement!.coords.x,
       this.imgPlacement!.coords.y,
       this.imgPlacement!.size.width,
